@@ -48,6 +48,21 @@ Date: 2026-11-04
 
 final result: passed
 
+## 2026-11-10 Workflow Audit Fixes
+
+- Extended parser aliases and merchandise formats: adjacent product/price equations, colon separators, paired name/equation segments, additional quantity units, and unambiguous labeled fields. Ambiguous ASCII model/price boundaries and inconsistent arithmetic remain review errors.
+- Verified both reported three-product formats: quantities 20/9/10, unit prices 600/1000/500, net 26000 and gross 27300 when untaxed. Original multiline lesson format still produces net 4800 and gross 5040.
+- New buyer/source identity clears absent previous buyer fields; source parsing invalidates outstanding company queries. Undo restores fields, original parsed text, rows and pricing state together.
+- Failed parsing can populate recovered buyer fields, but preserves old rows with a visible warning and prevents old-data PNG/print output.
+- Initial empty state uses a neutral message. Each editable unit price is labeled taxed/untaxed/pending; manual overrides of explicit source pricing are disclosed.
+- Mobile: sticky editor/preview controls and total, direct review-items action, compact secondary item tools, whole-paper fit plus explicit zoom/scroll mode. At 390px the fitted paper right edge is 374px and document width is 390px.
+- Source proposal generation omits redundant merge/context versions. A single item without background yields one version; background creates a genuinely different memo version. Apply, undo and manual-input invalidation exercised in browser.
+- Paper unit prices use at most two decimals and an approximation marker where multiplication differs; line totals remain unchanged with a visible reconciliation note.
+- PNG exports use Blob URLs, have a retained manual download link, invalidate old links on edits and report browser-save uncertainty honestly. Downloaded PNG was opened and visually inspected; all columns and the grand total are present.
+- Draft JSON exports avoid unsupported native save pickers, retain a manual download link and preserve source review metadata. Actual exported JSON was read back and loaded in browser. Invalid-format import was rejected without replacing buyer or total.
+- Parser regression tests, JavaScript syntax checks and whitespace checks passed. Test evidence: output/playwright/fix-20261110/; screenshots and downloaded synthetic files are local-only and not included in deployment.
+- Limits: mobile checks are viewport simulations, not physical Android/iPhone tests; physical printing and screen-reader acceptance are not established by this run.
+
 ## Transaction Parsing and Interaction Correction
 
 - Corrected labeled multiline item names and standalone unit-price equations; regression fixtures use fictional buyer data only.

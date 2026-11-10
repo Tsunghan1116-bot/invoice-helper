@@ -28,4 +28,23 @@ assert.equal(parse("1200*4=4800").blocking, true);
 assert.equal(parse("抬頭：範例國小；統編：12345678").rows.length, 0);
 assert.equal(parse("名稱：社團鐘點費；１２００＊４＝４８００；不含稅").rows[0].unit, 1200);
 assert.equal(parse("名稱：社團鐘點費；1200*4=4800；含稅又未稅").priceType, "pending");
+const merchandise = "客戶名稱：範例國小；統編：12345678；紅色EVO定軸短軸600*20=12000；炫風三培鈴1000*9=9000；小黑炭棍500*10=5000；以上未稅";
+for (const input of [merchandise, merchandise.replace(/(紅色EVO定軸短軸|炫風三培鈴|小黑炭棍)/g, "$1；")]) {
+  const result = parse(input);
+  assert.equal(result.blocking, false);
+  assert.equal(result.fields.buyerName, "範例國小");
+  assert.deepEqual(result.rows.map(({ name, qty, unit }) => [name, qty, unit]), [["紅色EVO定軸短軸",20,600],["炫風三培鈴",9,1000],["小黑炭棍",10,500]]);
+}
+assert.equal(parse("名稱：商品A；600*20=12000；名稱：商品B；1000*9=9000；未稅").rows.length, 2);
+assert.equal(parse("名稱：115年社團費；1200*4=4800；未稅").rows[0].name, "115年社團費");
+assert.equal(parse("小黑炭棍500*10=5500；未稅").blocking, true);
+assert.equal(parse("EVO2600*20=52000；未稅").blocking, true);
+assert.equal(parse("EVO2：600*20=12000；未稅").rows[0].unit, 600);
+assert.equal(parse("30公分炭棍：500*10=5000；未稅").rows[0].name, "30公分炭棍");
+assert.equal(parse("學校名稱：範例國小；教學4堂，每堂3000元；未稅").fields.buyerName, "範例國小");
+assert.equal(parse("買受人地址：範例路1號；抬頭：範例商行；教材600*20；未稅").fields.buyerAddress, "範例路1號");
+assert.equal(parse("教材600*20；未稅").rows[0].qty, 20);
+assert.equal(parse("教材20支，每支600元；未稅").rows[0].unit, 600);
+assert.equal(parse("名稱：A；金額：4800；名稱：B；金額：2000；未稅").blocking, false);
+assert.equal(parse("名稱：教材；單價：600；數量：2；金額：1200；名稱：授課；單價：1000；數量：3；金額：3000；總計：4200；未稅").blocking, false);
 console.log("Transaction parser regression checks passed.");

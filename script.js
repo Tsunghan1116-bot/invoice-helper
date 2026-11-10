@@ -4,7 +4,10 @@ const state = {
       appliedSourceMemo: null,
       companyLookupTimer: null,
       companyRequestId: 0,
-      suppressCompanyLookup: false
+      suppressCompanyLookup: false,
+      validationStarted: false,
+      sourceBlocked: false,
+      exportUrl: null
     };
 
     const COMPANY_API_BASE = "https://company.g0v.ronny.tw/api";
@@ -125,7 +128,7 @@ const state = {
       tr.innerHTML = `
         <td><input class="name" aria-label="品項名稱" type="text" placeholder="例如：顧問服務" value="${escapeHtml(item.name || "")}"></td>
         <td><input class="qty num" aria-label="數量" type="number" min="0" step="1" value="${item.qty ?? 1}"></td>
-        <td><input class="unit num" aria-label="單價" type="number" min="0" step="1" value="${item.unit ?? 0}"></td>
+        <td><input class="unit num" aria-label="單價" type="number" min="0" step="any" value="${item.unit ?? 0}"><span class="unit-kind"></span></td>
         <td>
           <select class="priceType">
             <option value="pending"${(!item.priceType || item.priceType === "pending") ? " selected" : ""}>待確認</option>
@@ -160,6 +163,7 @@ const state = {
           tr.remove();
         }
         updateTotals();
+        invalidateSuggestions();
       });
       body.appendChild(tr);
       updateTotals();
@@ -202,6 +206,7 @@ const state = {
     }
 
     function updateTotals() {
+      clearInvoiceDownload();
       const taxRate = getTaxRate();
       const rows = readRows();
       let subtotal = 0;
@@ -210,6 +215,7 @@ const state = {
       let activeCount = 0;
 
       rows.forEach((row) => {
+        row.tr.querySelector(".unit-kind").textContent = { taxed: "含稅單價", untaxed: "未稅單價", pending: "價格待確認" }[row.priceType];
         const amount = rowAmounts(row, taxRate);
         row.tr.querySelector(".untaxedSubtotal").textContent = format(amount.untaxed);
         row.tr.querySelector(".taxAmount").textContent = format(amount.tax);
@@ -380,6 +386,11 @@ const state = {
       const activeRows = rows.filter((row) => row.unit > 0 && row.qty > 0);
       const taxTypes = new Set(activeRows.map((row) => row.taxType));
       const messages = [];
+      if (state.sourceBlocked) messages.push({ type: "error", text: "交易描述尚未成功整理；下方仍為上次明細，請勿當作本次開票結果。" });
+      if (!state.validationStarted && !activeRows.length) {
+        box.innerHTML = '<div class="check-item neutral">尚未編列品項</div>';
+        return;
+      }
 
       if (activeRows.some((row) => row.priceType === "pending")) {
         messages.push({ type: "error", text: "有品項尚未確認含稅／未稅，該筆暫不計入合計。" });
@@ -388,9 +399,9 @@ const state = {
       if (invoiceNo && !/^[A-Za-z]{2}\d{8}$/.test(invoiceNo)) messages.push({ type: "error", text: "發票號碼應為 2 碼英文字軌與 8 碼數字。" });
       if (activeRows.length > 5) messages.push({ type: "warn", text: "超過紙本常見的 5 列；預覽將展開顯示全部資料，請確認如何分張或合併。" });
 
-      if (activeRows.length) {
+      if (activeRows.length && !state.sourceBlocked) {
         messages.push({ type: "ok", text: `已有 ${activeRows.length} 個有效品項，含稅總額 ${format(totals.total)}。` });
-      } else {
+      } else if (!activeRows.length) {
         messages.push({ type: "error", text: "請至少輸入一個有數量與單價的品項。" });
       }
 
@@ -481,10 +492,10 @@ const state = {
         const sourceTotals = calculatePlanTotals(rows);
         const rawDetails = rows.map((row) => `${row.name} ${row.qty} × ${formatPlain(row.unit)}`).join("；");
         const candidates = [{ profileLabel: "依描述直列", rows, memo }];
-        if (new Set(rows.map((row) => `${row.priceType}:${row.taxType}`)).size === 1) {
+        if (rows.length > 1 && new Set(rows.map((row) => `${row.priceType}:${row.taxType}`)).size === 1) {
           candidates.push({ profileLabel: "合併列示（需核對品名）", rows: [{ ...rows[0], name: [...new Set(rows.map((row) => row.name))].join("、"), qty: 1, unit: rows.reduce((sum, row) => sum + row.qty * row.unit, 0) }], memo: [memo, `原明細：${rawDetails}`].filter(Boolean).join("；") });
         }
-        candidates.push({ profileLabel: "分列並附交易說明", rows: rows.map((row) => ({ ...row })), memo: [memo, context || `原明細：${rawDetails}`].filter(Boolean).join("；") });
+        if (context && !memo.includes(context)) candidates.push({ profileLabel: "分列並附交易說明", rows: rows.map((row) => ({ ...row })), memo: [memo, context].filter(Boolean).join("；") });
         const results = candidates.map((candidate) => {
           const totals = calculatePlanTotals(candidate.rows);
           return { ...candidate, sourceBased: true, targetType: "untaxed", total: totals.subtotal, displayTotal: totals.total, subtotal: totals.subtotal, tax: totals.taxTotal, diff: Math.abs(totals.total - sourceTotals.total), score: { notes: ["沿用交易描述的品名與金額。", candidate.memo || "無額外備註。", ...(totals.total !== sourceTotals.total ? [`合併造成含稅四捨五入差額 ${totals.total - sourceTotals.total} 元，請核對。`] : [])] } };
@@ -721,9 +732,11 @@ const state = {
         totals
       };
       document.getElementById("printPreview").innerHTML = `
-        <div class="invoice-stack">${renderInvoicePaper(invoiceData)}</div>
+        ${state.sourceBlocked ? '<p class="check-item error">交易描述尚未成功整理：以下保留上次明細，並非本次結果。</p>' : ""}
+        <div class="invoice-stage"><div class="invoice-stack">${renderInvoicePaper(invoiceData)}</div></div>
         <div class="invoice-note">開票草稿，非正式發票。</div>
       `;
+      requestAnimationFrame(fitInvoicePreview);
     }
 
     function renderInvoicePaper(data) {
@@ -752,11 +765,13 @@ const state = {
         const pending = row.priceType === "pending";
         const paperAmount = data.invoiceType === "duplicate" ? amount.taxed : amount.untaxed;
         const paperUnit = row.qty ? paperAmount / row.qty : row.unit;
+        const roundedUnit = Math.round(paperUnit * 100) / 100;
+        const approximateUnit = Math.abs(roundedUnit * row.qty - paperAmount) > 0.005;
         return `
           <tr>
             <td class="item-name">${escapeHtml(row.name)}</td>
             <td class="num">${new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 6 }).format(row.qty)}</td>
-            <td class="num">${pending ? "待確認" : new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 6 }).format(paperUnit)}</td>
+            <td class="num">${pending ? "待確認" : `${approximateUnit ? "約 " : ""}${new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 2 }).format(roundedUnit)}`}</td>
             <td class="num">${pending ? "待確認" : formatPlain(paperAmount)}</td>
             <td>${escapeHtml(data.memo)}</td>
           </tr>
@@ -827,7 +842,7 @@ const state = {
             </div>
           </div>
           <div class="invoice-footer-tip"><span>※草稿供填寫核對使用。</span><span>第一聯・存根聯</span></div>
-          ${data.invoiceType === "triplicate" && data.activeRows.some((row) => row.priceType === "taxed") ? '<div class="invoice-note">單價欄為未稅折算值；折算有小數時，以各列金額與合計核對。</div>' : ""}
+          ${data.activeRows.some((row) => row.priceType === "taxed" || row.priceType === "untaxed" && data.invoiceType === "duplicate") ? '<div class="invoice-note">單價最多顯示 2 位小數；「約」表示折算近似值，請以各列金額與合計核對，勿用近似單價反算總額。</div>' : ""}
         </div>
       `;
     }
@@ -921,17 +936,49 @@ const state = {
       document.getElementById("planStatus").textContent = "";
     }
 
+    function fitInvoicePreview() {
+      const stage = document.querySelector("#printPreview .invoice-stage");
+      const stack = stage?.querySelector(".invoice-stack");
+      if (!stage || !stack || !stage.clientWidth) return;
+      const fit = window.matchMedia("(max-width: 760px)").matches && !document.body.classList.contains("preview-zoomed");
+      const scale = fit ? Math.min(1, stage.clientWidth / 700) : 1;
+      stage.style.setProperty("--paper-scale", scale);
+      stage.style.height = fit ? `${stack.scrollHeight * scale}px` : "";
+    }
+
+    function clearInvoiceDownload() {
+      state.exportRevision = (state.exportRevision || 0) + 1;
+      if (state.exportUrl) URL.revokeObjectURL(state.exportUrl);
+      state.exportUrl = null;
+      const fallback = document.getElementById("invoiceImageLink");
+      if (fallback) { fallback.hidden = true; fallback.removeAttribute("href"); }
+      const status = document.getElementById("exportStatus");
+      if (status) status.textContent = "";
+    }
+
+    function canExportInvoice() {
+      state.validationStarted = true;
+      updateTotals();
+      const rows = readRows().filter((row) => row.unit > 0 && row.qty > 0);
+      let problem = "";
+      if (state.sourceBlocked || document.getElementById("transactionText").value.trim() && !window.hasParsedSource?.()) problem = "交易描述尚未成功整理，請先核對並整理，避免輸出舊資料。";
+      else if (!rows.length || rows.some((row) => row.priceType === "pending")) problem = "請先輸入品項並確認含稅／未稅，再輸出草稿。";
+      if (problem) document.getElementById("exportStatus").textContent = problem;
+      return !problem;
+    }
+
     async function downloadInvoiceImage() {
       const button = document.getElementById("downloadInvoice");
       const status = document.getElementById("exportStatus");
       if (button.disabled) return;
+      if (!canExportInvoice()) return;
       button.disabled = true;
       button.setAttribute("aria-busy", "true");
       status.textContent = "正在產生圖片…";
       let frame;
       try {
         if (!window.htmlToImage) throw new Error("圖片元件未載入，請重新整理頁面後重試。");
-        updateTotals();
+        const revision = state.exportRevision;
         // Use a separate desktop viewport so mobile layout cannot alter the exported paper.
         frame = document.createElement("iframe");
         frame.title = "發票圖片輸出";
@@ -951,20 +998,27 @@ const state = {
         paper.prepend(label);
         doc.body.appendChild(paper);
         await doc.fonts.ready;
-        const dataUrl = await window.htmlToImage.toPng(paper, {
+        const blob = await window.htmlToImage.toBlob(paper, {
           pixelRatio: 2,
           backgroundColor: "#ffffff",
           style: { margin: "0" },
           width: paper.offsetWidth,
           height: paper.offsetHeight
         });
+        if (!blob || blob.size === 0) throw new Error("圖片內容為空，請重試。");
+        if (revision !== state.exportRevision) throw new Error("資料已變更，請重新下載最新草稿。");
+        state.exportUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.download = `invoice-draft-${document.getElementById("invoiceDate").value || todayValue()}.png`;
-        link.href = dataUrl;
+        link.href = state.exportUrl;
         document.body.appendChild(link);
         link.click();
         link.remove();
-        status.textContent = "圖片已產生，請查看瀏覽器下載項目。";
+        const fallback = document.getElementById("invoiceImageLink");
+        fallback.href = state.exportUrl;
+        fallback.download = link.download;
+        fallback.hidden = false;
+        status.textContent = "已送出圖片下載；瀏覽器無法確認是否儲存完成。若沒有下載，請使用下方圖片連結。";
       } catch (error) {
         status.textContent = `下載失敗：${error.message || "請稍後再試。"}`;
       } finally {
@@ -1012,8 +1066,7 @@ const state = {
       if (button) button.dataset.retryLookup === "name" ? lookupCompanyByName() : lookupCompanyByTaxId();
     });
     document.getElementById("printInvoice").addEventListener("click", () => {
-      updateTotals();
-      window.print();
+      if (canExportInvoice()) window.print();
     });
     document.getElementById("suggest").addEventListener("click", generateSuggestions);
     document.getElementById("applyBest").addEventListener("click", applyBestPlan);
