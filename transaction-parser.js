@@ -37,6 +37,13 @@
       } else paired.push(segment);
     }
     const candidates = [];
+    function addCandidate(value) {
+      const net = /未稅|不含稅|稅外加/.test(value);
+      const gross = /含稅|稅內含/.test(value.replaceAll("不含稅", ""));
+      const stripped = value.replace(/(?:以上|皆為|均為|全部|價格)?\s*(?:未稅|不含稅|含稅|稅內含|稅外加)\s*$/g, "").trim();
+      if (!stripped) return;
+      candidates.push({ line: stripped, price: ["taxed", "untaxed"].includes(priceOverride) ? priceOverride : net !== gross ? net ? "untaxed" : "taxed" : priceType });
+    }
     for (const segment of paired) {
       let match;
       if ((match = segment.match(/^(?:發票)?(?:抬頭|買受人名稱|買受人(?!地址|統一編號)|公司名稱|客戶名稱|學校名稱)\s*[:：]?\s*(.+)$/))) { result.fields.buyerName = match[1].trim(); continue; }
@@ -46,7 +53,7 @@
       if ((match = segment.match(/^(?:品名|品項名稱|品項|名稱|開立項目)\s*[:：]\s*(.+)$/))) {
         // A label may contain a complete item, or just name a following calculation.
         const content = match[1].trim();
-        if (/\d\s*(?:元|[x×*]|堂|次|式|件|份)/.test(content) && !/^\d{2,4}年/.test(content)) candidates.push(content);
+        if (/\d\s*(?:元|[x×*]|堂|次|式|件|份)/.test(content) && !/^\d{2,4}年/.test(content)) addCandidate(content);
         else {
           finishStructuredRow();
           if (explicitName) { result.issues.push("多個名稱尚未對應金額，請為每個品名補上金額。"); result.blocking = true; }
@@ -61,9 +68,9 @@
         else declaredAmount = money(match[2]);
         continue;
       }
-      const stripped = segment.replace(/(?:以上|皆為|均為|全部|價格)?\s*(?:未稅|不含稅|含稅|稅內含|稅外加)\s*$/g, "").trim();
-      if (stripped) candidates.push(stripped);
+      addCandidate(segment);
     }
+    let rowPriceType = priceType;
     function add(name, qty, price, expected) {
       if (!Number.isFinite(qty) || !Number.isFinite(price) || qty <= 0 || price < 0 || qty * price > Number.MAX_SAFE_INTEGER) { result.issues.push("數量或單價無效，請確認。"); result.blocking = true; return false; }
       if (expected != null && Math.abs(qty * price - expected) > 0.005) {
@@ -71,10 +78,11 @@
         result.blocking = true;
         return false;
       }
-      result.rows.push({ name: cleanName(name), qty, unit: price, priceType, taxType: "taxable", adjustable: true });
+      result.rows.push({ name: cleanName(name), qty, unit: price, priceType: rowPriceType, taxType: "taxable", adjustable: true });
       return true;
     }
-    for (const line of candidates) {
+    for (const { line, price } of candidates) {
+      rowPriceType = price;
       let match;
       if ((match = line.match(/^([\d.]+)\s*[×x*]\s*([\d.]+)(?:\s*=\s*([\d.]+))?\s*元?$/i))) {
         if (add("", Number(match[2]), money(match[1]), match[3] == null ? null : money(match[3]))) result.issues.push(`算式依「單價 × 數量」帶入：${match[1]} × ${match[2]}，請核對。`);
@@ -99,6 +107,10 @@
         result.fields.buyerName = line;
       } else {
         result.contexts.push(line);
+        if (/[一二三四五六七八九十\d]+(?:批|份|件|套|組|堂|次|小時)$/.test(line)) {
+          result.issues.push(`「${line}」缺少金額，請補上單價或總額。`);
+          result.blocking = true;
+        }
         if (/[×x*＝=]/i.test(line)) {
           result.issues.push(`「${line}」未能配對品名與算式，請改用「品名：單價 × 數量 = 小計」。`);
           result.blocking = true;
@@ -106,9 +118,11 @@
       }
     }
     if (structuredRows.length) {
+      rowPriceType = priceType;
       finishStructuredRow();
       for (const item of structuredRows) add(item.name, item.qty, item.unitPrice != null ? item.unitPrice : item.amount / item.qty, item.unitPrice != null ? item.amount : null);
     } else if (!result.rows.length && (unitPrice != null || declaredAmount != null || grandTotal != null) && explicitName) {
+      rowPriceType = priceType;
       const qty = quantity || 1;
       add(explicitName, qty, unitPrice != null ? unitPrice : (declaredAmount ?? grandTotal) / qty, unitPrice != null ? declaredAmount : null);
       if (quantity == null) result.issues.push("未提供數量，暫列 1 筆，請核對。");
@@ -119,13 +133,19 @@
       result.issues.push("有算式缺少對應品名，請補上「名稱：…」。");
       result.blocking = true;
     }
-    if (explicitName && result.rows.length > 1 && !result.rows.some((row) => row.name === explicitName)) result.issues.push(`原文名稱「${explicitName}」尚未對應特定品項，請核對。`);
+    if (explicitName && !result.rows.some((row) => row.name === explicitName)) {
+      result.issues.push(`「${explicitName}」缺少對應金額，請補上單價或總額。`);
+      result.blocking = true;
+    }
     const expectedTotal = grandTotal ?? (structuredRows.length ? null : declaredAmount);
     if (expectedTotal != null && result.rows.length) {
       const actual = result.rows.reduce((sum, row) => sum + row.qty * row.unit, 0);
       if (Math.abs(actual - expectedTotal) > 0.005) { result.issues.push(`明細合計 ${actual} 與原文金額 ${expectedTotal} 不同，請確認。`); result.blocking = true; }
     }
     if (!result.rows.length) result.issues.push("未辨識到完整品名與金額，原有明細未替換。請補上名稱、金額或算式。");
+    const types = new Set(result.rows.map((row) => row.priceType));
+    result.priceType = types.size === 1 ? [...types][0] : "pending";
+    result.mixedPricing = types.size > 1 || hasNet && hasGross;
     return result;
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { parseTransactionText };

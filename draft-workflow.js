@@ -56,6 +56,46 @@
   let draftUrl = null;
   let draftContent = "";
   let buyerIdentity = el("buyerName").value.trim();
+  let editorScroll = 0;
+  const pendingPrices = () => rowsSnapshot().filter((row) => row.unit > 0 && row.qty > 0 && row.priceType === "pending");
+  function showIssues(issues = []) {
+    el("sourceIssues").replaceChildren(...issues.map((issue) => {
+      const item = document.createElement("li");
+      item.textContent = issue;
+      return item;
+    }));
+    el("sourceIssues").hidden = !issues.length;
+  }
+  function clearFieldIssue() {
+    document.querySelectorAll('[aria-describedby="fieldIssue"]').forEach((field) => {
+      field.removeAttribute("aria-invalid");
+      field.removeAttribute("aria-describedby");
+    });
+    el("fieldIssue").hidden = true;
+    workspace.insertBefore(el("fieldIssue"), el("validationBox"));
+  }
+  function revealField(field, message = "") {
+    clearFieldIssue();
+    el("showEditor").click();
+    for (let parent = field.parentElement; parent; parent = parent.parentElement) {
+      if (parent.tagName === "DETAILS") parent.open = true;
+    }
+    if (field.matches(".priceType, .taxType")) {
+      document.body.classList.add("show-item-details");
+      el("itemDetails").setAttribute("aria-pressed", "true");
+    }
+    if (message) {
+      field.setAttribute("aria-invalid", "true");
+      el("fieldIssue").textContent = message;
+      el("fieldIssue").hidden = false;
+      const container = field.closest("#itemsBody") ? workspace.querySelector(".table-wrap") : field.closest("label, .transaction-section, fieldset");
+      container?.appendChild(el("fieldIssue"));
+      field.setAttribute("aria-describedby", "fieldIssue");
+    }
+    field.scrollIntoView({ block: "center" });
+    field.focus({ preventScroll: true });
+  }
+  window.focusInvoiceField = revealField;
 
   function rowsSnapshot() {
     return readRows().map(({ tr, ...row }) => ({ ...row, name: tr.querySelector(".name").value }));
@@ -73,11 +113,17 @@
     }
     el("saveStatus").textContent = dirty() ? "尚未匯出目前修改" : lastExport || "尚未儲存";
     const active = rowsSnapshot().filter((row) => row.unit > 0 && row.qty > 0);
+    const types = new Set(active.map((row) => row.priceType));
+    const mixedSource = /未稅|不含稅|稅外加/.test(el("transactionText").value) && /含稅|稅內含/.test(el("transactionText").value.replaceAll("不含稅", ""));
+    el("priceQuestion").hidden = !pendingPrices().length || state.sourceBlocked || mixedSource || Boolean(el("transactionText").value.trim() && !window.hasParsedSource?.());
+    el("reviewPreview").hidden = !active.length || pendingPrices().length > 0 || state.sourceBlocked || Boolean(el("transactionText").value.trim() && !window.hasParsedSource?.());
+    el("reviewItems").hidden = !active.length || state.sourceBlocked || Boolean(el("transactionText").value.trim() && !window.hasParsedSource?.());
+    document.querySelector(".source-comparison").hidden = !sourceFacts.length;
     el("mobileTotal").textContent = el("total").textContent;
     el("descriptionCount").textContent = `${el("transactionText").value.length} 字`;
     document.querySelector(".transaction-section").classList.toggle("confirmed", active.length > 0 && active.every((row) => row.priceType !== "pending"));
     renderReview();
-    el("sourcePriceSummary").textContent = { pending: "待確認", untaxed: "未稅", taxed: "含稅" }[el("sourcePriceType").value];
+    el("sourcePriceSummary").textContent = types.size > 1 ? "逐筆不同" : { pending: "待確認", untaxed: "未稅", taxed: "含稅" }[active[0]?.priceType || el("sourcePriceType").value];
     const parts = getRocDateParts(el("invoiceDate").value);
     const year = parts.periodYear + 1911;
     if (el("invoicePeriod").dataset.year !== String(year)) {
@@ -88,6 +134,7 @@
     document.querySelectorAll('[name="invoiceKind"]').forEach((radio) => { radio.checked = radio.value === el("invoiceType").value; });
   }
   function replaceRows(rows) {
+    clearFieldIssue();
     body.replaceChildren();
     rows.forEach((row) => makeRow(row));
     updateTotals();
@@ -112,8 +159,12 @@
     state.validationStarted = true;
     const raw = el("transactionText").value.trim();
     if (!raw) { el("sourceStatus").textContent = "請先輸入交易描述。"; return false; }
+    clearFieldIssue();
     const explicitPrice = /未稅|不含稅|含稅|稅內含|稅外加/.test(raw);
-    const result = parseTransactionText(raw, options.priceOverride || (explicitPrice ? "pending" : el("sourcePriceType").value));
+    const result = parseTransactionText(raw, options.priceOverride || (explicitPrice || raw !== lastParsedSource ? "pending" : el("sourcePriceType").value));
+    showIssues(result.issues);
+    el("priceQuestionStatus").textContent = "";
+    document.querySelectorAll('[name="priceAnswer"]').forEach((radio) => { radio.checked = false; });
     window.capturePlanUndo();
     const sameBuyer = result.fields.buyerName ? result.fields.buyerName === el("buyerName").value.trim() : result.fields.buyerTaxId && result.fields.buyerTaxId === el("buyerTaxId").value.trim();
     if (raw !== lastParsedSource && !sameBuyer) {
@@ -129,10 +180,11 @@
     buyerIdentity = el("buyerName").value.trim();
     if (result.blocking || !result.rows.length) {
       state.sourceBlocked = true;
+      sourceFacts = [];
       invalidateSuggestions();
       el("reviewItems").hidden = true;
       updateTotals();
-      el("sourceStatus").textContent = `買受人欄位已依原文更新；品項未替換。${result.issues.join(" ")}`;
+      el("sourceStatus").textContent = `${Object.keys(result.fields).length ? "可辨識的買受人／備註欄位已帶入。" : ""}品項尚未完整辨識，下方明細未替換，請修正以下內容。`;
       el("sourceStatus").classList.add("needs-review");
       refresh();
       return false;
@@ -149,16 +201,23 @@
     if (result.contexts.length) sourceFacts.push({ label: "交易背景", value: result.contexts.join("；") });
     if (result.issues.length) sourceFacts.push({ label: "解析提醒", value: result.issues.join(" ") });
     el("sourcePriceType").value = result.priceType;
-    document.querySelector(".price-options").open = result.priceType === "pending";
+    document.querySelector(".price-options").open = false;
     lastParsedSource = raw;
     replaceRows(result.rows);
     invalidateSuggestions();
     updateTotals();
-    el("sourceStatus").textContent = `已帶入 ${result.rows.length} 筆${result.priceType === "pending" ? "，請確認含稅／未稅" : "，金額已更新"}${result.issues.length ? `；${result.issues.length} 項待核對` : ""}。`;
+    const pending = result.rows.some((row) => row.priceType === "pending");
+    document.body.classList.toggle("show-item-details", result.mixedPricing);
+    el("itemDetails").setAttribute("aria-pressed", String(result.mixedPricing));
+    el("sourceStatus").textContent = `已帶入${result.fields.buyerName ? "買受人及 " : " "}${result.rows.length} 筆品項，${pending ? "價格類型待確認，總額尚未完整計算" : `含稅總額 ${el("total").textContent}`}。`;
+    if (result.mixedPricing) {
+      el("sourceStatus").textContent += "原文有不同價格類型，請逐筆核對，不會整批推定。";
+      document.querySelector(".item-tools").open = true;
+    }
     if (options.priceOverride && explicitPrice && parseTransactionText(raw).priceType !== result.priceType) el("sourceStatus").textContent += "已依你的選擇覆寫原文價格類型，請核對。";
-    el("sourceStatus").classList.toggle("needs-review", result.priceType === "pending" || result.issues.length > 0);
+    el("sourceStatus").classList.toggle("needs-review", pending || result.issues.length > 0);
     el("reviewItems").hidden = false;
-    if (result.priceType !== "pending") generateSuggestions();
+    if (!pending) generateSuggestions();
     refresh();
     return true;
   }
@@ -180,6 +239,7 @@
     undoRows = null;
     for (const id of ids) el(id).value = previous.fields[id];
     sourceFacts = previous.sourceFacts;
+    showIssues(sourceFacts.filter((fact) => fact.label === "解析提醒").map((fact) => fact.value));
     lastParsedSource = previous.lastParsedSource;
     state.sourceBlocked = previous.sourceBlocked;
     buyerIdentity = el("buyerName").value.trim();
@@ -190,9 +250,48 @@
     el("planStatus").textContent = "已復原套用前的品項明細。";
     if (window.hasParsedSource()) generateSuggestions();
     el("sourceStatus").textContent = "已復原上次帶入／套用前的資料，請核對。";
+    el("sourceStatus").classList.toggle("needs-review", state.sourceBlocked || pendingPrices().length > 0);
     refresh();
   });
-  el("parseTransaction").addEventListener("click", parseDescription);
+  el("parseTransaction").addEventListener("click", () => parseDescription());
+  el("fillExample").addEventListener("click", () => {
+    const hasContent = ["transactionText", "buyerName", "buyerTaxId", "buyerAddress", "invoiceMemo"].some((id) => el(id).value.trim()) || rowsSnapshot().some((row) => row.name || row.unit > 0);
+    if (hasContent && !window.confirm("已有填寫內容，確定換成虛構範例？下方明細不會立即替換，需再按整理。")) return;
+    window.capturePlanUndo();
+    el("transactionText").value = "抬頭：範例商行；統編：12345678；教學4堂，每堂3000元；教材製作1式，每式2000元；以上未稅。";
+    el("transactionText").dispatchEvent(new Event("input", { bubbles: true }));
+    revealField(el("transactionText"));
+  });
+  el("manualEntry").addEventListener("click", () => {
+    if (el("transactionText").value.trim()) {
+      if (!window.confirm("改為手動填寫會清空交易描述，但保留下方買受人與明細。確定繼續？可使用復原回復。")) return;
+      window.capturePlanUndo();
+      el("transactionText").value = "";
+      lastParsedSource = "";
+      sourceFacts = [];
+      state.sourceBlocked = false;
+      showIssues();
+      el("sourceStatus").textContent = "已切換為手動填寫，原有明細保留。";
+      updateTotals();
+    }
+    clearFieldIssue();
+    revealField(body.querySelector(".name"));
+  });
+  el("resolvePrice").addEventListener("click", () => {
+    if (state.sourceBlocked || el("transactionText").value.trim() && !window.hasParsedSource()) {
+      el("priceQuestionStatus").textContent = "交易描述已變更，請先重新整理。";
+      return;
+    }
+    const type = document.querySelector('[name="priceAnswer"]:checked')?.value;
+    if (!type) { el("priceQuestionStatus").textContent = "請選擇未稅或含稅。"; return; }
+    window.capturePlanUndo();
+    body.querySelectorAll(".priceType").forEach((input) => { if (input.value === "pending") input.value = type; });
+    el("sourcePriceType").value = type;
+    updateTotals();
+    el("sourceStatus").textContent = `已確認${type === "taxed" ? "含稅" : "未稅"}單價，${rowsSnapshot().filter((row) => row.unit > 0).length} 筆品項，含稅總額 ${el("total").textContent}。`;
+    el("sourceStatus").classList.remove("needs-review");
+    if (window.hasParsedSource()) generateSuggestions();
+  });
   el("refreshVersions").addEventListener("click", generateSuggestions);
   el("clearRows").addEventListener("click", () => {
     window.capturePlanUndo();
@@ -223,6 +322,7 @@
   });
   el("transactionText").addEventListener("input", () => {
     clearInvoiceDownload();
+    showIssues();
     if (lastParsedSource && !window.hasParsedSource()) {
       state.sourceBlocked = Boolean(el("transactionText").value.trim());
       invalidateSuggestions();
@@ -294,13 +394,18 @@
       state.sourceBlocked = data.blocked;
       state.validationStarted = true;
       lastParsedSource = data.parsedText;
+      clearFieldIssue();
+      showIssues();
       replaceRows(data.rows);
       undoRows = null;
       el("undoPlan").disabled = true;
       invalidateSuggestions();
       el("sourceStatus").textContent = "已載入草稿，請核對原文與明細。";
       el("reviewItems").hidden = data.blocked;
-      document.querySelector(".price-options").open = data.rows.some((row) => row.priceType === "pending");
+      document.querySelector(".price-options").open = false;
+      const needsRowReview = new Set(data.rows.map((row) => row.priceType)).size > 1 || /未稅|不含稅/.test(data.fields.transactionText) && /含稅/.test(data.fields.transactionText.replaceAll("不含稅", ""));
+      document.body.classList.toggle("show-item-details", needsRowReview);
+      el("itemDetails").setAttribute("aria-pressed", String(needsRowReview));
       baseline = JSON.stringify(snapshot());
       lastExport = "已載入草稿檔";
       refresh();
@@ -308,7 +413,7 @@
     finally { event.target.value = ""; }
   });
   el("newDraft").addEventListener("click", () => {
-    if (dirty() && !window.confirm("目前有未儲存修改，確定建立新草稿？")) return;
+    if (dirty() && !window.confirm("目前有未匯出的修改，確定開始新交易？")) return;
     state.companyRequestId += 1;
     clearTimeout(state.companyLookupTimer);
     for (const id of ["invoiceNo", "invoiceMemo", "buyerName", "buyerTaxId", "buyerAddress", "targetAmount", "transactionText"]) el(id).value = "";
@@ -321,16 +426,23 @@
     el("reviewItems").hidden = true;
     sourceFacts = [];
     lastParsedSource = "";
+    clearFieldIssue();
     replaceRows([{}]);
     undoRows = null;
     el("undoPlan").disabled = true;
     invalidateSuggestions();
     el("sourceStatus").textContent = "";
+    showIssues();
+    document.body.classList.remove("show-item-details");
+    el("itemDetails").setAttribute("aria-pressed", "false");
+    document.querySelector(".price-options").open = false;
+    el("versionTools").open = false;
     el("exportStatus").textContent = "";
     hideCompanyResults();
     baseline = JSON.stringify(snapshot());
     lastExport = "";
     refresh();
+    revealField(el("transactionText"));
   });
   baseline = JSON.stringify(snapshot());
   el("buyerName").addEventListener("change", () => {
@@ -348,6 +460,10 @@
     buyerIdentity = next;
   });
   el("reviewItems").addEventListener("click", () => document.querySelector(".items-title").scrollIntoView({ behavior: "smooth", block: "start" }));
+  el("reviewPreview").addEventListener("click", () => {
+    el("showPreview").click();
+    document.querySelector(".preview-heading").scrollIntoView({ block: "start" });
+  });
   el("zoomInvoice").addEventListener("click", (event) => {
     const zoomed = document.body.classList.toggle("preview-zoomed");
     event.currentTarget.textContent = zoomed ? "完整票面" : "放大檢視";
@@ -358,20 +474,31 @@
   window.addEventListener("resize", fitInvoicePreview);
   for (const [id, preview] of [["showEditor", false], ["showPreview", true]]) {
     el(id).addEventListener("click", () => {
+      const wasPreview = document.body.classList.contains("preview-mode");
+      if (preview && !wasPreview) editorScroll = window.scrollY;
       document.body.classList.toggle("preview-mode", preview);
       el("showEditor").setAttribute("aria-pressed", String(!preview));
       el("showPreview").setAttribute("aria-pressed", String(preview));
+      fitInvoicePreview();
+      if (!preview && wasPreview && window.innerWidth <= 760) window.scrollTo({ top: editorScroll });
     });
   }
   window.draftWorkflowChanged = refresh;
   refresh();
   document.addEventListener("input", (event) => {
+    if (event.target.getAttribute("aria-invalid") === "true") {
+      clearFieldIssue();
+    }
     if (event.target.id !== "invoicePeriod" && event.target.name !== "invoiceKind") refresh();
   });
   document.addEventListener("input", (event) => {
     if (event.target.closest("#itemsBody") || event.target.id === "invoiceMemo") {
       invalidateSuggestions();
       el("planStatus").textContent = "明細已調整，可按「更新版本」重新編列。";
+      if (!state.sourceBlocked) {
+        el("sourceStatus").textContent = "明細已手動調整，請以目前合計與預覽為準。";
+        el("sourceStatus").classList.toggle("needs-review", pendingPrices().length > 0);
+      }
     }
   });
   document.addEventListener("change", refresh);

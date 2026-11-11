@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>開票工作台｜發票草稿與金額編列</title>
   <link rel="stylesheet" href="style.css?v=20261104c">
-  <link rel="stylesheet" href="workspace.css?v=20261110a">
+  <link rel="stylesheet" href="workspace.css?v=20261111c">
 </head>
 <body>
   <header class="app-hero">
     <h1>開票工作台</h1>
     <nav aria-label="主要功能"><a class="active" href="#transactionText" aria-current="page">開立發票</a><a href="#draftFiles">草稿檔案</a><a href="#buyerFields">買受人資料</a><a href="#itemsBody">品項明細</a></nav>
+    <div class="workspace-actions" role="group" aria-label="交易操作">
+      <button type="button" class="secondary" id="undoPlan" title="回復上次帶入或套用前的資料" disabled>復原</button>
+      <button type="button" class="secondary" id="newDraft">新交易</button>
+    </div>
   </header>
 
   <main>
@@ -23,21 +27,22 @@
       <details class="draft-tools" id="draftFiles"><summary>草稿檔案 <span id="saveStatus" role="status" aria-live="polite">尚未儲存</span></summary><div class="draft-actions">
         <button type="button" id="saveDraft">匯出草稿檔</button>
         <button type="button" class="secondary" id="loadDraft">載入草稿檔</button>
-        <button type="button" class="secondary" id="newDraft">建立新草稿</button>
         <input id="draftFile" type="file" accept="application/json,.json" hidden>
         <a id="draftDownloadLink" hidden>另存草稿 JSON</a>
       </div></details>
       <div class="transaction-section">
-        <label for="transactionText" class="section-label">交易描述</label>
+        <div class="entry-heading"><label for="transactionText" class="section-label"><span class="section-number" aria-hidden="true">01</span>交易描述</label><button type="button" class="text-action" id="manualEntry">直接填寫明細</button></div>
         <textarea id="transactionText" rows="3" placeholder="抬頭：範例商行；統編：12345678；課程教學 4 堂，每堂 3000 元；教材製作 1 式，每式 2000 元；以上未稅。"></textarea>
-        <div class="description-help"><span>例：名稱：社團鐘點費；1200*4=4800；抬頭：範例國小</span><span id="descriptionCount">0 字</span></div>
+        <div class="description-help"><button type="button" class="text-action" id="fillExample">試填範例</button><span id="descriptionCount">0 字</span></div>
         <button type="button" id="parseTransaction">整理開票內容</button>
-        <details class="price-options" open><summary>描述中的價格：<span id="sourcePriceSummary">待確認</span></summary><div class="price-confirmation">
+        <fieldset id="priceQuestion" hidden><legend>這些單價是未稅還是含稅？</legend><div class="price-choices"><label><input type="radio" name="priceAnswer" value="untaxed">未稅，另加營業稅</label><label><input type="radio" name="priceAnswer" value="taxed">含稅，已含營業稅</label></div><button type="button" id="resolvePrice">確認價格並繼續</button><p id="priceQuestionStatus" role="status"></p></fieldset>
+        <details class="price-options"><summary>調整全部品項的價格類型：<span id="sourcePriceSummary">待確認</span></summary><div class="price-confirmation">
           <label>描述中的價格<select id="sourcePriceType"><option value="pending">待確認</option><option value="untaxed">未稅</option><option value="taxed">含稅</option></select></label>
           <button type="button" class="secondary" id="confirmSourcePrice">確認並套用價格類型</button>
         </div></details>
         <p id="sourceStatus" role="status" aria-live="polite"></p>
-        <button type="button" class="secondary" id="reviewItems" hidden>核對品項明細</button>
+        <ul id="sourceIssues" hidden></ul>
+        <div class="review-actions"><button type="button" class="secondary" id="reviewItems" hidden>核對品項明細</button><button type="button" class="secondary" id="reviewPreview" hidden>核對預覽</button></div>
         <details class="source-comparison"><summary>原文與資料核對</summary><div id="sourceReview"></div></details>
       </div>
 
@@ -65,7 +70,7 @@
       </div>
 
       <div class="subsection-title settings-title">
-        <span>發票資訊</span>
+        <span><span class="section-number" aria-hidden="true">03</span>發票資訊</span>
       </div>
 
       <div class="settings">
@@ -90,15 +95,15 @@
       </div>
 
       <div class="subsection-title buyer-title">
-        <span>買受人資料</span>
+        <span><span class="section-number" aria-hidden="true">02</span>買受人資料</span>
       </div>
 
       <div class="buyer-fields" id="buyerFields">
-        <label>
+        <label class="buyer-identity">
           買受人名稱
           <input type="text" id="buyerName" placeholder="公司或商號名稱">
         </label>
-        <label>
+        <label class="buyer-registration">
           買受人統一編號
           <div class="lookup-actions">
             <input type="text" id="buyerTaxId" inputmode="numeric" maxlength="8" placeholder="8 碼統編">
@@ -106,7 +111,7 @@
           </div>
           <span class="status" id="taxIdStatus"></span>
         </label>
-        <label>
+        <label class="buyer-location">
           買受人地址
           <input type="text" id="buyerAddress" placeholder="選填">
         </label>
@@ -114,10 +119,11 @@
         <p id="buyerChangeStatus" role="status" aria-live="polite"></p>
       </div>
 
+      <p id="fieldIssue" role="alert" hidden></p>
       <div class="validation" id="validationBox"></div>
 
       <div class="subsection-title items-title">
-        <span>品項明細 <small>小計為未稅；單價依各筆標示</small></span>
+        <span><span class="section-number" aria-hidden="true">04</span>品項明細 <small>小計為未稅；單價依各筆標示</small></span>
         <div class="toolbar"><button type="button" class="secondary" id="addRow"><img class="button-icon" src="assets/icons/plus.svg" alt="">新增品項</button><details class="item-tools"><summary>更多設定</summary><button type="button" class="secondary" id="clearRows">清除明細</button><button type="button" class="secondary" id="itemDetails" aria-pressed="false">稅別設定</button></details></div>
       </div>
 
@@ -147,7 +153,7 @@
     <div class="right-workspace">
       <section class="preview-panel">
         <div class="preview-heading"><h2>統一發票預覽 <span class="draft-badge">開票草稿</span></h2>
-          <div class="toolbar"><button type="button" class="secondary" id="downloadInvoice" title="下載發票草稿 PNG"><img class="button-icon" src="assets/icons/download.svg" alt="">下載 PNG</button><button type="button" class="secondary" id="printInvoice"><img class="button-icon" src="assets/icons/printer.svg" alt="">列印</button></div>
+          <div class="toolbar"><button type="button" id="downloadInvoice" title="下載發票草稿 PNG"><img class="button-icon" src="assets/icons/download.svg" alt="">下載發票草稿</button><button type="button" class="secondary" id="printInvoice"><img class="button-icon" src="assets/icons/printer.svg" alt="">列印</button></div>
         </div>
         <button type="button" class="secondary" id="zoomInvoice" aria-pressed="false">放大檢視</button>
         <div class="print-preview" id="printPreview"></div>
@@ -155,9 +161,9 @@
         <a id="invoiceImageLink" hidden target="_blank" rel="noopener">另存發票 PNG</a>
       </section>
     <aside class="strategy-panel">
+      <details id="versionTools"><summary><span class="section-number" aria-hidden="true">05</span>金額編列建議</summary>
       <div class="section-head">
         <div>
-          <h2>編列版本</h2>
           <p class="hint">選擇版本後，套用至品項明細。</p>
           <button type="button" class="secondary" id="refreshVersions">更新版本</button>
         </div>
@@ -215,15 +221,15 @@
         <div class="notice">提醒：編列建議是把實際服務內容整理成發票明細，不應為了湊金額創造不存在的交易、品名或數量。</div>
         <div id="suggestions"></div>
         <p id="planStatus" role="status" aria-live="polite"></p>
-        <button type="button" class="secondary" id="undoPlan" disabled>復原上次套用</button>
       </div>
+      </details>
     </aside>
     </div>
   </main>
 
   <script src="assets/vendor/html-to-image/html-to-image.js?v=1.11.13"></script>
-  <script src="script.js?v=20261110a"></script>
-  <script src="transaction-parser.js?v=20261110a"></script>
-  <script src="draft-workflow.js?v=20261110a"></script>
+  <script src="script.js?v=20261111b"></script>
+  <script src="transaction-parser.js?v=20261111b"></script>
+  <script src="draft-workflow.js?v=20261111c"></script>
 </body>
 </html>

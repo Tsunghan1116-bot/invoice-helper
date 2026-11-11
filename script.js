@@ -130,14 +130,14 @@ const state = {
         <td><input class="qty num" aria-label="數量" type="number" min="0" step="1" value="${item.qty ?? 1}"></td>
         <td><input class="unit num" aria-label="單價" type="number" min="0" step="any" value="${item.unit ?? 0}"><span class="unit-kind"></span></td>
         <td>
-          <select class="priceType">
+          <select class="priceType" aria-label="單價類型">
             <option value="pending"${(!item.priceType || item.priceType === "pending") ? " selected" : ""}>待確認</option>
             <option value="untaxed"${item.priceType === "untaxed" ? " selected" : ""}>未稅</option>
             <option value="taxed"${item.priceType === "taxed" ? " selected" : ""}>含稅</option>
           </select>
         </td>
         <td>
-          <select class="taxType">
+          <select class="taxType" aria-label="稅別">
             <option value="taxable"${(item.taxType || "taxable") === "taxable" ? " selected" : ""}>應稅</option>
             <option value="zero"${item.taxType === "zero" ? " selected" : ""}>零稅率</option>
             <option value="exempt"${item.taxType === "exempt" ? " selected" : ""}>免稅</option>
@@ -399,7 +399,7 @@ const state = {
       if (invoiceNo && !/^[A-Za-z]{2}\d{8}$/.test(invoiceNo)) messages.push({ type: "error", text: "發票號碼應為 2 碼英文字軌與 8 碼數字。" });
       if (activeRows.length > 5) messages.push({ type: "warn", text: "超過紙本常見的 5 列；預覽將展開顯示全部資料，請確認如何分張或合併。" });
 
-      if (activeRows.length && !state.sourceBlocked) {
+      if (activeRows.length && !state.sourceBlocked && activeRows.every((row) => row.priceType !== "pending")) {
         messages.push({ type: "ok", text: `已有 ${activeRows.length} 個有效品項，含稅總額 ${format(totals.total)}。` });
       } else if (!activeRows.length) {
         messages.push({ type: "error", text: "請至少輸入一個有數量與單價的品項。" });
@@ -961,9 +961,32 @@ const state = {
       updateTotals();
       const rows = readRows().filter((row) => row.unit > 0 && row.qty > 0);
       let problem = "";
-      if (state.sourceBlocked || document.getElementById("transactionText").value.trim() && !window.hasParsedSource?.()) problem = "交易描述尚未成功整理，請先核對並整理，避免輸出舊資料。";
-      else if (!rows.length || rows.some((row) => row.priceType === "pending")) problem = "請先輸入品項並確認含稅／未稅，再輸出草稿。";
-      if (problem) document.getElementById("exportStatus").textContent = problem;
+      let field;
+      const incomplete = [...body.querySelectorAll("tr")].find((tr) => (tr.querySelector(".name").value.trim() || Number(tr.querySelector(".unit").value) > 0) && (!tr.querySelector(".name").value.trim() || Number(tr.querySelector(".qty").value) <= 0 || Number(tr.querySelector(".unit").value) <= 0));
+      if (state.sourceBlocked || document.getElementById("transactionText").value.trim() && !window.hasParsedSource?.()) {
+        problem = "交易描述尚未成功整理，請修正並按「整理開票內容」，避免輸出舊資料。";
+        field = document.getElementById("transactionText");
+      } else if (incomplete) {
+        const missing = !incomplete.querySelector(".name").value.trim() ? ".name" : Number(incomplete.querySelector(".qty").value) <= 0 ? ".qty" : ".unit";
+        problem = { ".name": "請填寫這筆品項的名稱，再下載草稿。", ".qty": "這筆品項的數量須大於零。", ".unit": "請填寫這筆品項的單價，金額須大於零。" }[missing];
+        field = incomplete.querySelector(missing);
+      } else if (!rows.length) {
+        problem = "請至少填寫一筆品項、數量與單價。";
+        field = body.querySelector(".name");
+      } else if (rows.some((row) => row.priceType === "pending")) {
+        problem = "請確認這筆單價是含稅或未稅，再下載草稿。";
+        field = !document.getElementById("priceQuestion").hidden ? document.querySelector('[name="priceAnswer"]') : rows.find((row) => row.priceType === "pending").tr.querySelector(".priceType");
+      } else {
+        const invoiceNo = document.getElementById("invoiceNo");
+        if (invoiceNo.value && !/^[A-Za-z]{2}\d{8}$/.test(invoiceNo.value.trim())) {
+          problem = "發票號碼應為 2 碼英文字軌與 8 碼數字，或留空。";
+          field = invoiceNo;
+        }
+      }
+      if (problem) {
+        document.getElementById("exportStatus").textContent = problem;
+        if (field) window.focusInvoiceField?.(field, problem);
+      }
       return !problem;
     }
 
@@ -986,10 +1009,23 @@ const state = {
         frame.style.cssText = "position:fixed;left:-12000px;top:0;width:1000px;height:1200px;border:0;pointer-events:none;";
         document.body.appendChild(frame);
         const doc = frame.contentDocument;
+        // Linked sheets also work for file:// pages, where cssRules access is blocked.
+        await Promise.all([...document.querySelectorAll('link[rel~="stylesheet"], style')].map((source) => {
+          if (source.tagName === "STYLE") {
+            doc.head.appendChild(source.cloneNode(true));
+            return Promise.resolve();
+          }
+          return new Promise((resolve, reject) => {
+            const link = doc.createElement("link");
+            link.rel = "stylesheet";
+            link.href = source.href;
+            link.onload = resolve;
+            link.onerror = () => reject(new Error("發票樣式載入失敗，請重新整理後重試。"));
+            doc.head.appendChild(link);
+          });
+        }));
         const style = doc.createElement("style");
-        style.textContent = [...document.styleSheets].map((sheet) =>
-          [...sheet.cssRules].map((rule) => rule.cssText).join("\n")
-        ).join("\n") + "\nbody{margin:0;background:white;} .invoice-paper{box-shadow:none;}";
+        style.textContent = "body{margin:0;background:white;} .invoice-paper{box-shadow:none;}";
         doc.head.appendChild(style);
         const paper = document.querySelector("#printPreview .invoice-paper").cloneNode(true);
         const label = doc.createElement("div");
