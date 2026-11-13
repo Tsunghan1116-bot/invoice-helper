@@ -74,7 +74,7 @@ summary { cursor: pointer; }
 .invoice-number-settings { margin: 12px 0; font-size: 12px; color: var(--muted); }
 .invoice-number-settings label { margin-top: 8px; }
 .settings label { color: var(--text); font-size: 12px; }
-.settings label:last-child { grid-column: 1 / -1; }
+.settings label:last-child { grid-column: auto; }
 .memo-field { margin-top: 14px; font-size: 12px; color: var(--text); }
 .editor-bottom { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; gap: 24px; margin-top: 20px; }
 .editor-bottom .memo-field { margin: 0; }
@@ -328,4 +328,113 @@ button.text-action:hover { background: transparent; color: var(--primary); }
   .invoice-stage { height: auto !important; overflow: visible !important; }
   .invoice-stage .invoice-stack { width: auto; transform: none !important; }
   .invoice-stage .invoice-paper.invoice-template { width: 100%; min-width: 0; }
+}
+
+/* Entry modes share one invoice editor and one preview. */
+.app-hero { gap: 12px 24px; }
+.app-hero .entry-tabs { gap: 6px; align-items: stretch; }
+.entry-tabs [role="tab"] { background: transparent; color: var(--muted); border: 0; border-bottom: 3px solid transparent; border-radius: 0; min-height: 44px; padding: 8px 12px; font-size: 14px; white-space: nowrap; }
+.entry-tabs [aria-selected="true"] { color: var(--primary-dark); border-bottom-color: var(--primary); }
+.entry-tabs [role="tab"]:hover { background: var(--primary-soft); }
+.entry-tabs [role="tab"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.workspace-actions .draft-tools { position: relative; padding: 0; margin: 0; border: 0; }
+.workspace-actions .draft-tools > summary { list-style: none; padding: 8px 10px; min-height: 36px; border: 1px solid #a9bfbd; border-radius: 4px; color: var(--primary-dark); font-size: 13px; font-weight: 600; }
+.workspace-actions .draft-tools > summary::-webkit-details-marker { display: none; }
+.workspace-actions #saveStatus { float: none; display: block; font-size: 11px; font-weight: 400; color: var(--muted); max-width: 260px; }
+.workspace-actions .draft-tools:not([open]) #saveStatus { display: none; }
+.workspace-actions .draft-tools .draft-actions { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 260px; margin: 0; padding: 12px; border: 1px solid var(--line-strong); border-radius: 4px; background: #fff; box-shadow: 0 6px 18px #26323514; }
+.workspace-actions .draft-actions button { width: 100%; text-align: left; }
+#entryStatus { margin: 0 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#entryStatus .text-action { margin-left: auto; }
+#sharedEditor > .price-options { margin: 12px 0 0; }
+#sharedEditor > .price-options:not([open]) { font-size: 12px; }
+.transaction-section[hidden], .strategy-panel[hidden], #sharedEditor[hidden], #entryStatus[hidden], #printPreview[hidden], #previewState[hidden], #zoomInvoice[hidden] { display: none !important; }
+.preview-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -6px 0 12px; }
+.preview-controls .invoice-type-selector { gap: 6px 14px; }
+.preview-controls .invoice-type-selector legend { float: none; margin: 0; padding: 0; font-size: 12px; }
+.preview-controls #zoomInvoice { margin: 0; }
+#previewState { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid #aa7b38; background: #fff8ed; color: #805414; font-size: 13px; }
+#checkPreview, #backToEditor { display: none; }
+.allocation-workspace { margin: 0; padding: 0 0 16px; border-top: 0; border-bottom: 1px solid var(--line); }
+.allocation-workspace #versionTools > summary { display: none; }
+.allocation-workspace #versionTools .section-head { padding-top: 0; }
+.allocation-workspace .section-head h2 { font-size: 19px; }
+.allocation-workspace #versionTools .allocation-settings > summary { margin-top: 4px; }
+.allocation-workspace .allocation-settings .form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.allocation-workspace .field, .allocation-workspace input, .allocation-workspace select { min-width: 0; }
+.allocation-workspace .suggestion { grid-template-columns: minmax(0,1fr) auto; }
+.allocation-workspace .suggestion-description { padding-right: 48px; }
+.allocation-workspace .suggestion button[data-apply-plan] { grid-column: 1 / -1; grid-row: auto; width: 100%; }
+.allocation-workspace .hint { display: none; }
+.allocation-context { margin: 10px 0; font-size: 13px; color: var(--muted); }
+.allocation-context[hidden], .allocation-workspace.source-versions .allocation-settings { display: none; }
+@media (max-width: 1080px) and (min-width: 761px) {
+  .app-hero { gap: 8px 16px; }
+  .app-hero h1 { font-size: 24px; }
+  .entry-tabs [role="tab"] { padding: 8px; font-size: 13px; }
+  .workspace-actions { gap: 6px; }
+}
+@media (max-width: 760px) {
+  .app-hero { display: grid; grid-template-columns: 1fr; gap: 12px; padding-bottom: 0; }
+  .app-hero h1 { grid-row: 1; font-size: 23px; }
+  .workspace-actions { grid-row: 2; justify-content: flex-start; margin: 0; flex-basis: auto; }
+  .workspace-actions .draft-tools { margin-right: auto; }
+  .workspace-actions .draft-tools > summary { min-height: 44px; padding: 12px 10px; }
+  .workspace-actions .draft-tools .draft-actions { left: 0; right: auto; width: min(270px, calc(100vw - 32px)); }
+  .app-hero .entry-tabs { grid-row: 3; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0; }
+  .entry-tabs [role="tab"] { font-size: 14px; padding: 10px 4px; width: 100%; }
+  .mobile-view-controls { justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .mobile-view-controls #mobileTotal { width: auto; flex: 1; }
+  .mobile-view-controls button { flex: 0 0 auto; min-width: 100px; }
+  .mobile-view-controls #showEditor { display: none; }
+  .preview-mode .mobile-view-controls #showEditor { display: block; }
+  .preview-mode .mobile-view-controls #showPreview { display: none; }
+  .preview-mode .app-hero .entry-tabs { display: none; }
+  .preview-mode .preview-panel { display: flex; flex-direction: column; }
+  .preview-mode .preview-heading { display: contents; }
+  .preview-heading h2 { order: 0; margin-bottom: 14px; }
+  #previewState { order: 1; }
+  #zoomInvoice { order: 2; align-self: flex-start; }
+  .preview-controls { order: 2; margin: 0 0 10px; }
+  .preview-controls .invoice-type-selector legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .preview-controls .invoice-type-selector { gap: 6px; }
+  .preview-controls .invoice-type-selector label { min-height: 44px; font-size: 12px; gap: 5px; }
+  .preview-controls #zoomInvoice { min-height: 44px; padding: 6px 8px; font-size: 12px; }
+  #printPreview { order: 3; }
+  #exportStatus, #invoiceImageLink { order: 4; }
+  .preview-heading .preview-actions { order: 5; position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; background: #fff; border-top: 1px solid var(--line); margin-top: 16px; z-index: 10; }
+  .preview-actions #backToEditor { display: block; flex: 0 0 88px; width: auto; }
+  .preview-actions #printInvoice { flex: 0 0 44px; min-width: 44px; width: 44px; font-size: 0; }
+  .preview-actions #printInvoice .button-icon { margin: 0; }
+  .preview-actions #downloadInvoice { flex: 1; width: auto; min-width: 0; padding: 8px; }
+  #checkPreview { display: block; flex: 1; }
+}
+@media (max-width: 760px) {
+  .app-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 6px 12px 0; }
+  .app-hero h1 { font-size: 20px; padding-left: 8px; }
+  .workspace-actions { margin-left: auto; flex-basis: auto; gap: 5px; }
+  .workspace-actions button { min-width: 44px; min-height: 44px; padding: 6px 7px; font-size: 12px; }
+  .workspace-actions .draft-tools { margin-right: 0; }
+  .workspace-actions .draft-tools > summary { font-size: 12px; padding: 12px 7px; }
+  .workspace-actions .draft-tools .draft-actions { left: auto; right: 0; }
+  .app-hero .entry-tabs { flex-basis: 100%; }
+  main { padding: 8px 12px 24px; }
+  .mobile-view-controls { margin-bottom: 8px; padding: 4px 0; gap: 4px; }
+  .transaction-section textarea { min-height: 100px; margin-top: 6px; }
+  .description-help { margin-bottom: 4px; }
+  .source-options { margin-top: 8px; gap: 6px; }
+  .review-actions { margin-top: 6px; }
+  .subsection-title { padding: 12px 0 8px; }
+  .buyer-fields, .settings { gap: 8px; padding-bottom: 12px; }
+  .buyer-fields label { gap: 4px; }
+  .editor-bottom { gap: 8px; margin-top: 12px; }
+  .metric, .metric.highlight { padding: 5px 0; }
+  .invoice-number-settings { margin: 8px 0; }
+  .allocation-workspace .form-grid { gap: 10px; }
+  .preview-heading h2 { margin-bottom: 8px; font-size: 18px; }
+  .preview-heading .preview-actions { padding: 8px 0; margin-top: 8px; }
+}
+@media print {
+  .preview-controls, #previewState, .preview-actions { display: none !important; }
+  #printPreview[hidden] { display: block !important; }
 }

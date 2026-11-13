@@ -38,10 +38,6 @@
     document.getElementById("invoiceDate").value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     updateTotals();
   });
-  document.querySelector('a[href="#draftFiles"]').addEventListener("click", () => {
-    document.getElementById("draftFiles").open = true;
-    document.body.classList.remove("preview-mode");
-  });
   document.getElementById("itemDetails").addEventListener("click", (event) => {
     const expanded = document.body.classList.toggle("show-item-details");
     event.currentTarget.setAttribute("aria-pressed", String(expanded));
@@ -72,10 +68,11 @@
       field.removeAttribute("aria-describedby");
     });
     el("fieldIssue").hidden = true;
-    workspace.insertBefore(el("fieldIssue"), el("validationBox"));
+    el("validationBox").before(el("fieldIssue"));
   }
   function revealField(field, message = "") {
     clearFieldIssue();
+    window.prepareInvoiceField?.(field);
     el("showEditor").click();
     for (let parent = field.parentElement; parent; parent = parent.parentElement) {
       if (parent.tagName === "DETAILS") parent.open = true;
@@ -263,19 +260,7 @@
     revealField(el("transactionText"));
   });
   el("manualEntry").addEventListener("click", () => {
-    if (el("transactionText").value.trim()) {
-      if (!window.confirm("改為手動填寫會清空交易描述，但保留下方買受人與明細。確定繼續？可使用復原回復。")) return;
-      window.capturePlanUndo();
-      el("transactionText").value = "";
-      lastParsedSource = "";
-      sourceFacts = [];
-      state.sourceBlocked = false;
-      showIssues();
-      el("sourceStatus").textContent = "已切換為手動填寫，原有明細保留。";
-      updateTotals();
-    }
-    clearFieldIssue();
-    revealField(body.querySelector(".name"));
+    window.setInvoiceEntryMode?.("manual");
   });
   el("resolvePrice").addEventListener("click", () => {
     if (state.sourceBlocked || el("transactionText").value.trim() && !window.hasParsedSource()) {
@@ -409,6 +394,7 @@
       baseline = JSON.stringify(snapshot());
       lastExport = "已載入草稿檔";
       refresh();
+      el("draftFiles").open = false;
     } catch (error) { el("saveStatus").textContent = `載入失敗：${error.message}，原有內容未替換。`; }
     finally { event.target.value = ""; }
   });
@@ -442,6 +428,7 @@
     baseline = JSON.stringify(snapshot());
     lastExport = "";
     refresh();
+    document.dispatchEvent(new Event("invoice:new"));
     revealField(el("transactionText"));
   });
   baseline = JSON.stringify(snapshot());
@@ -480,6 +467,7 @@
       el("showEditor").setAttribute("aria-pressed", String(!preview));
       el("showPreview").setAttribute("aria-pressed", String(preview));
       fitInvoicePreview();
+      if (preview && window.innerWidth <= 760) window.scrollTo({ top: 0 });
       if (!preview && wasPreview && window.innerWidth <= 760) window.scrollTo({ top: editorScroll });
     });
   }

@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>開票工作台｜發票草稿與金額編列</title>
   <link rel="stylesheet" href="style.css?v=20261104c">
-  <link rel="stylesheet" href="workspace.css?v=20261111c">
+  <link rel="stylesheet" href="workspace.css?v=20261113b">
 </head>
 <body>
   <header class="app-hero">
     <h1>開票工作台</h1>
-    <nav aria-label="主要功能"><a class="active" href="#transactionText" aria-current="page">開立發票</a><a href="#draftFiles">草稿檔案</a><a href="#buyerFields">買受人資料</a><a href="#itemsBody">品項明細</a></nav>
+    <nav class="entry-tabs" role="tablist" aria-label="填寫方式">
+      <button type="button" id="modeDescription" role="tab" aria-controls="entryPanel" aria-selected="true" data-entry-mode="description">交易描述</button>
+      <button type="button" id="modeManual" role="tab" aria-controls="entryPanel" aria-selected="false" tabindex="-1" data-entry-mode="manual">手動填寫</button>
+      <button type="button" id="modeAllocation" role="tab" aria-controls="entryPanel" aria-selected="false" tabindex="-1" data-entry-mode="allocation">金額編列</button>
+    </nav>
     <div class="workspace-actions" role="group" aria-label="交易操作">
       <button type="button" class="secondary" id="undoPlan" title="回復上次帶入或套用前的資料" disabled>復原</button>
       <button type="button" class="secondary" id="newDraft">新交易</button>
@@ -19,11 +23,11 @@
 
   <main>
     <nav class="mobile-view-controls" aria-label="工作區檢視">
-      <button type="button" id="showEditor" aria-pressed="true">編輯資料</button>
-      <button type="button" id="showPreview" class="secondary" aria-pressed="false">發票預覽</button>
+      <button type="button" id="showEditor" aria-pressed="true">返回修改</button>
+      <button type="button" id="showPreview" class="secondary" aria-pressed="false">核對預覽</button>
       <output id="mobileTotal" aria-label="含稅總額">$0</output>
     </nav>
-    <section class="workspace-panel">
+    <section class="workspace-panel" id="entryPanel" role="tabpanel" aria-labelledby="modeDescription">
       <details class="draft-tools" id="draftFiles"><summary>草稿檔案 <span id="saveStatus" role="status" aria-live="polite">尚未儲存</span></summary><div class="draft-actions">
         <button type="button" id="saveDraft">匯出草稿檔</button>
         <button type="button" class="secondary" id="loadDraft">載入草稿檔</button>
@@ -147,14 +151,15 @@
         </table>
       </div>
 
-      <div class="editor-footer"><button type="button" class="secondary" id="copySummary">複製摘要</button></div>
+      <div class="editor-footer"><button type="button" id="checkPreview">核對預覽</button><button type="button" class="secondary" id="copySummary">複製摘要</button></div>
     </section>
 
     <div class="right-workspace">
       <section class="preview-panel">
         <div class="preview-heading"><h2>統一發票預覽 <span class="draft-badge">開票草稿</span></h2>
-          <div class="toolbar"><button type="button" id="downloadInvoice" title="下載發票草稿 PNG"><img class="button-icon" src="assets/icons/download.svg" alt="">下載發票草稿</button><button type="button" class="secondary" id="printInvoice"><img class="button-icon" src="assets/icons/printer.svg" alt="">列印</button></div>
+          <div class="toolbar preview-actions"><button type="button" class="secondary" id="backToEditor">返回修改</button><button type="button" id="downloadInvoice" title="下載發票草稿 PNG"><img class="button-icon" src="assets/icons/download.svg" alt="">下載發票草稿</button><button type="button" class="secondary" id="printInvoice" title="列印草稿" aria-label="列印草稿"><img class="button-icon" src="assets/icons/printer.svg" alt="">列印</button></div>
         </div>
+        <p id="previewState" role="status" hidden></p>
         <button type="button" class="secondary" id="zoomInvoice" aria-pressed="false">放大檢視</button>
         <div class="print-preview" id="printPreview"></div>
         <p id="exportStatus" role="status" aria-live="polite"></p>
@@ -230,6 +235,7 @@
   <script src="assets/vendor/html-to-image/html-to-image.js?v=1.11.13"></script>
   <script src="script.js?v=20261111b"></script>
   <script src="transaction-parser.js?v=20261111b"></script>
-  <script src="draft-workflow.js?v=20261111c"></script>
+  <script src="draft-workflow.js?v=20261113a"></script>
+  <script src="workspace-modes.js?v=20261113b"></script>
 </body>
 </html>
