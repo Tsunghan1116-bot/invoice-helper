@@ -4,6 +4,9 @@
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { min-height: 100vh; min-height: 100dvh; line-height: 1.5; }
 button, input, select, textarea { font-family: inherit; }
+.workspace-actions { gap: 8px; }
+.workspace-actions > .draft-tools { display: block; flex: 0 0 auto; margin: 0; }
+.workspace-actions > button, .workspace-actions .draft-tools > summary { display: inline-flex; align-items: center; justify-content: center; height: 36px; min-height: 36px; margin: 0; padding: 0 10px; line-height: 1.5; }
 .settings > label, .buyer-fields > label, .lookup-actions, .entry-heading, .subsection-title > span { min-width: 0; }
 .settings input, .settings select, .buyer-fields input { width: 100%; max-width: 100%; min-width: 0; }
 input[type="date"] { appearance: none; -webkit-appearance: none; text-align: left; }
@@ -21,6 +24,7 @@ input[type="date"]::-webkit-date-and-time-value { min-height: 1.5em; text-align:
 .suggestion-topline h3 { overflow-wrap: anywhere; }
 
 @media (max-width: 760px) {
+  .workspace-actions > button, .workspace-actions .draft-tools > summary { height: 44px; min-height: 44px; }
   .app-hero { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
   main { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
   #entryPanel input:not([type="radio"]):not([type="checkbox"]), #entryPanel select, #entryPanel textarea { font-size: 16px; min-width: 0; max-width: 100%; line-height: 1.5; }

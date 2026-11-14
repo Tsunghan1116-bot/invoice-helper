@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>使用說明｜開票工作台</title>
+  <link rel="stylesheet" href="workspace-guide.css?v=3">
+  <script src="workspace-guide.js?v=3" defer></script>
+</head>
+<body id="top">
+  <header class="guide-header">
+    <a class="guide-brand" href="workspace-preview.html" target="_blank" rel="noopener"><img src="assets/workspace-preview/receipt-text.svg" alt="">開票工作台</a>
+    <span>操作指南</span>
+    <a class="workspace-link" href="workspace-preview.html" target="_blank" rel="noopener">開啟工作台<img src="assets/workspace-preview/chevron-right.svg" alt=""></a>
+  </header>
+  <main>
+    <div class="guide-intro"><p class="guide-kicker">開始前先看這裡</p><h1>使用說明</h1><p>填寫交易資料，確認品項與價格，再核對發票草稿。查看說明不會改動工作台資料；關閉說明視窗後，就能繼續原本的交易。</p><div class="guide-caution">工作台產出的是填寫輔助草稿，不是正式發票。圖片中的買受人、統編與金額均為範例。</div></div>
+    <nav class="guide-toc" aria-label="說明章節">
+      <a href="#description">01 交易描述</a><a href="#manual">02 手動填寫</a><a href="#price">03 價格確認</a><a href="#allocation">04 金額編列</a><a href="#preview">05 預覽與下載</a><a href="#backup">06 備份與復原</a>
+    </nav>
+    <section id="description" class="guide-section">
+      <div class="section-heading"><span>01</span><div><h2>用交易描述帶入資料</h2><p>適合手上已有一段交易文字時使用。</p></div></div>
+      <div class="guide-columns"><div><ol><li>在編輯區選擇<strong>「交易描述」</strong>。</li><li>填入抬頭、統編、品名，以及單價與數量；已知含稅或未稅時，一起寫明。</li><li>點<strong>「整理開票內容」</strong>，再核對下方帶入的買受人與明細。</li></ol><div class="example"><h3>可參考這種寫法</h3><pre>抬頭：範例商行
+統編：12345678
+名稱：課程教學費
+1200*4=4800
+以上未稅</pre></div><p class="guide-note">算式預設依「單價 × 數量」判讀。範例為單價 1,200 元、數量 4。文字整理採目前支援的辨識規則，並非任意文字都能正確理解；整理後仍需核對。</p><p>若出現「未辨識到完整品名與金額」，補上品名、金額或算式，再重新整理；也可以切到「手動填寫」修正。尚未成功整理的描述，會阻止直接下載舊資料。</p></div><figure><a href="assets/workspace-guide/01-description.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/01-description.png" alt="交易描述輸入範例與整理開票內容按鈕"></a><figcaption>交易描述：先輸入，再點整理。點圖可在說明視窗內放大。</figcaption></figure></div>
+    </section>
+    <section id="manual" class="guide-section">
+      <div class="section-heading"><span>02</span><div><h2>手動填寫與核對買受人</h2><p>適合直接輸入，或修正已整理的資料。</p></div></div>
+      <div class="guide-columns"><div><ol><li>選擇<strong>「手動填寫」</strong>，輸入買受人名稱、統一編號與選填地址。</li><li>有需要時，輸入統編後點<strong>「查詢」</strong>，核對查得的公司資料；無結果或查詢失敗時仍可手動填寫。</li><li>確認開立日期與發票期別。品項明細填入品名、數量、單價，使用<strong>「新增品項」</strong>增加明細。</li><li>不同單價類型或稅別，可展開<strong>「更多設定 → 單價與稅別設定」</strong>，逐筆確認。</li></ol><div class="guide-caution">更改買受人名稱後，原本帶入的統編與地址可能會被清除，請重新核對。統編格式通過也不代表已完成公司資料驗證。</div><p>桌機的名稱與統編並排；手機採單欄。手機品項會分成品名、數量／單價與小計，不必在窄表格裡左右尋找。</p></div><figure><a href="assets/workspace-guide/02-buyer.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/02-buyer.png" alt="買受人名稱、統編查詢與地址欄位；範例統編顯示格式提醒" loading="lazy"></a><figcaption>範例統編 12345678 僅供示意，畫面中的格式提醒需留意。</figcaption></figure></div>
+    </section>
+    <section id="price" class="guide-section">
+      <div class="section-heading"><span>03</span><div><h2>確認未稅或含稅，選錯也能修改</h2><p>這裡是在確認「輸入的單價」是否已包含營業稅。</p></div></div>
+      <div class="guide-columns"><div><ol><li>填完品項後，若單價類型待確認，會在<strong>品項明細下方</strong>顯示問題。</li><li>選擇「未稅」或「含稅」，再點<strong>「確認單價類型」</strong>。</li><li>選錯時，在同一位置展開<strong>「修改含稅／未稅」</strong>，選擇新類型，再點<strong>「套用全部品項」</strong>。</li></ol><div class="price-example"><h3>以金額 4,800 元、稅率設定 5% 為例</h3><dl><div><dt>輸入的是未稅金額</dt><dd>4,800 + 240 = <strong>5,040 元</strong></dd></div><div><dt>輸入的是含稅金額</dt><dd>含稅總額仍為 <strong>4,800 元</strong></dd></div></dl></div><p class="guide-note">這是計算操作範例，不是交易稅別建議。「含稅／未稅」和「應稅／零稅率／免稅」是不同設定，請依實際交易核對。</p><p>同一張草稿若各筆單價類型不同，請改用逐筆設定，不要套用全部品項。尚有價格待確認時，預覽仍可看，但下載會要求先完成確認。</p></div><div class="guide-figures"><figure><a href="assets/workspace-guide/03-price.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/03-price.png" alt="品項下方的未稅與含稅選項及確認單價類型按鈕" loading="lazy"></a><figcaption>第一次確認：選擇後還要點確認按鈕。</figcaption></figure><figure><a href="assets/workspace-guide/04-change-price.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/04-change-price.png" alt="修改含稅未稅的下拉選單及套用全部品項按鈕" loading="lazy"></a><figcaption>事後修改：展開、選新類型，再套用。</figcaption></figure></div></div>
+    </section>
+    <section id="allocation" class="guide-section">
+      <div class="section-heading"><span>04</span><div><h2>產生並選用金額編列版本</h2><p>入口在編輯區的「金額編列」分頁，功能仍保留。</p></div></div>
+      <div class="guide-columns"><div><ol><li>選擇<strong>「金額編列」</strong>。已有整理好的交易時，會依目前明細提供版本。</li><li>若尚無整理好的交易，可在設定中輸入目標金額、含稅／未稅目標類型、稅率、服務類型與拆分筆數，再點<strong>「產生建議」</strong>。</li><li>比較各版的品名、數量、金額與備註，點喜歡版本的<strong>套用按鈕</strong>，帶入明細。</li><li>套用後再核對；不合適可用編輯區上方<strong>「復原」</strong>回到套用前。</li></ol><div class="guide-caution">編列版本是建議，不是交易事實。只能使用真實提供的商品或服務，不要為了湊金額創造品名、數量或交易。</div><p>單純切換版本分頁不會自動覆蓋資料；按套用才會帶入。手動改過明細後，需要重新更新版本。</p></div><figure><a href="assets/workspace-guide/05-allocation.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/05-allocation.png" alt="金額編列分頁中的多個版本、金額比較與套用按鈕" loading="lazy"></a><figcaption>先比較版本，再明確套用；原本的金額編列功能沒有移除。</figcaption></figure></div>
+    </section>
+    <section id="preview" class="guide-section">
+      <div class="section-heading"><span>05</span><div><h2>核對票面，再下載或列印</h2><p>空白格式一開始就能預覽，不必先填完。</p></div></div>
+      <div class="guide-columns"><div><ol><li>桌機可在右側看即時預覽；手機點<strong>「核對預覽」</strong>，再用<strong>「返回修改」</strong>回到編輯位置。</li><li>在預覽上方選擇<strong>二聯式／三聯式</strong>。需要看清楚時使用「放大檢視」：桌機會開啟原始尺寸的票面視窗；手機則放大原票面，可左右捲動。</li><li>核對買受人、統編、日期、品名、數量、單價，以及未稅、稅額、含稅總額。</li><li>點<strong>「下載發票草稿」</strong>取得 PNG；需要紙本草稿時使用<strong>「列印」</strong>。</li></ol><p>紙本常見為 5 列品項。超過 5 列時，預覽會展開顯示全部資料並提醒核對；請先確認如何分張或合併，不要直接照超出的版面填寫紙本。</p><p>若下載被擋住，頁面會帶你回到待確認欄位。已送出下載但沒有看到檔案時，檢查瀏覽器下載紀錄，或使用出現的<strong>「另存發票 PNG」</strong>連結。</p><div class="guide-caution">PNG 是圖片，不能當成可繼續編輯的備份；需要日後修改，請另外匯出草稿 JSON。</div></div><figure><a href="assets/workspace-guide/06-preview.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/06-preview.png" alt="三聯式票面預覽、金額小計、下載發票草稿與列印按鈕" loading="lazy"></a><figcaption>票面與合計一起核對，確認後再下載。</figcaption></figure></div>
+    </section>
+    <section id="backup" class="guide-section">
+      <div class="section-heading"><span>06</span><div><h2>備份、復原與開始下一筆</h2><p>草稿檔負責保留資料，圖片負責查看與列印。</p></div></div>
+      <div class="guide-columns"><div><dl class="action-list"><div><dt>匯出草稿檔</dt><dd>點編輯區上方或側欄「草稿檔案」，選「匯出草稿檔」，下載可再次編輯的 JSON。</dd></div><div><dt>載入草稿檔</dt><dd>在相同選單選「載入草稿檔」，選擇先前匯出的 JSON；載入前先備份目前還要保留的交易。</dd></div><div><dt>復原</dt><dd>回復上次帶入或套用前的資料；按鈕變淡代表目前沒有可復原的動作。它不是每一次鍵盤輸入的歷史紀錄。</dd></div><div><dt>新交易</dt><dd>清空目前交易、開始下一筆。尚未匯出的資料請先備份；有未儲存修改時，系統會要求確認。</dd></div></dl><p class="guide-note">草稿檔案不是雲端開票紀錄，也不會自動跨裝置同步。請自行保管 JSON 與 PNG，尤其是含有客戶資訊的檔案。</p></div><figure><a href="assets/workspace-guide/07-backup.png" target="_blank" rel="noopener"><img src="assets/workspace-guide/07-backup.png" alt="草稿檔案選單，包含匯出草稿檔與載入草稿檔" loading="lazy"></a><figcaption>要繼續編輯就存 JSON；只存 PNG 不足以還原欄位。</figcaption></figure></div>
+    </section>
+    <footer class="guide-footer"><span>開票工作台 · 新版操作指南</span><a href="#top">回到頂端 ↑</a></footer>
+  </main>
+</body>
+</html>

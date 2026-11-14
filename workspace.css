@@ -193,7 +193,6 @@ summary { cursor: pointer; }
 .suggestion-description { font-weight: 400; }
 .suggestion-lines th:first-child { width: 36%; }
 .suggestion-lines td { overflow-wrap: anywhere; }
-#undoPlan { margin-top: 8px; }
 .button-icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 6px; }
 @media (max-width: 1080px) {
   main { grid-template-columns: minmax(0, 44fr) minmax(0, 56fr); padding: 24px 18px; gap: 22px; }

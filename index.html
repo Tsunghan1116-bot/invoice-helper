@@ -3,14 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>開票工作台｜發票草稿與金額編列</title>
+  <title>開票小幫手｜開票工作台</title>
   <link rel="stylesheet" href="style.css?v=20261104c">
-  <link rel="stylesheet" href="workspace.css?v=20261114a">
-  <link rel="stylesheet" href="responsive.css?v=20261114b">
+  <link rel="stylesheet" href="workspace.css?v=20261114c">
+  <link rel="stylesheet" href="responsive.css?v=20261114c">
+  <link rel="stylesheet" href="workspace-preview.css?v=6">
 </head>
-<body>
+<body class="design-preview">
+  <aside class="design-sidebar" aria-label="主要導覽">
+    <a class="design-brand" href="index.html"><span class="brand-mark"><img src="assets/workspace-preview/receipt-text.svg" alt=""></span><span>Invoice<small>開票工作台</small></span></a>
+    <div class="sidebar-group-label">工作空間</div>
+    <nav class="design-navigation">
+      <button type="button" id="designHome" aria-current="page"><img src="assets/workspace-preview/panels-top-left.svg" alt="">開票工作台</button>
+      <button type="button" id="designDrafts"><img src="assets/workspace-preview/folder-open.svg" alt="">草稿檔案</button>
+      <button type="button" id="designGuide" aria-haspopup="dialog" aria-controls="designHelp"><img src="assets/workspace-preview/book-open.svg" alt="">使用說明</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-status-dot"></span>開票小幫手<small>發票草稿，非正式發票</small></div>
+  </aside>
+  <button type="button" class="sidebar-scrim" aria-label="關閉導覽" hidden></button>
   <header class="app-hero">
-    <h1>開票工作台</h1>
+    <div class="design-breadcrumb"><button type="button" id="designMenu" aria-label="開啟導覽" aria-expanded="false"><img src="assets/workspace-preview/menu.svg" alt=""></button><span>工作台</span><img src="assets/workspace-preview/chevron-right.svg" alt=""><strong>新增交易</strong></div>
     <nav class="entry-tabs" role="tablist" aria-label="填寫方式">
       <button type="button" id="modeDescription" role="tab" aria-controls="entryPanel" aria-selected="true" data-entry-mode="description">交易描述</button>
       <button type="button" id="modeManual" role="tab" aria-controls="entryPanel" aria-selected="false" tabindex="-1" data-entry-mode="manual">手動填寫</button>
@@ -23,6 +35,14 @@
   </header>
 
   <main>
+    <h1 class="design-screen-title">開票工作台</h1>
+    <div class="design-workbar" id="designWorkbar">
+      <ol class="design-flow" aria-label="目前作業階段">
+        <li data-design-section="buyer" aria-current="step"><span>1</span><strong>交易資料</strong></li>
+        <li data-design-section="items"><span>2</span><strong>品項明細</strong></li>
+        <li data-design-section="preview"><span>3</span><strong>核對與匯出</strong></li>
+      </ol>
+    </div>
     <nav class="mobile-view-controls" aria-label="工作區檢視">
       <button type="button" id="showEditor" aria-pressed="true">返回修改</button>
       <button type="button" id="showPreview" class="secondary" aria-pressed="false">核對預覽</button>
@@ -238,5 +258,14 @@
   <script src="transaction-parser.js?v=20261111b"></script>
   <script src="draft-workflow.js?v=20261113a"></script>
   <script src="workspace-modes.js?v=20261114a"></script>
+  <dialog class="design-help" id="designHelp" aria-labelledby="designHelpTitle">
+    <div class="design-help-heading"><div><img src="assets/workspace-preview/book-open.svg" alt=""><h2 id="designHelpTitle">使用說明</h2></div><button type="button" id="closeDesignHelp" aria-label="關閉使用說明" title="關閉使用說明" autofocus>&times;</button></div>
+    <iframe id="designHelpFrame" title="開票工作台圖文操作說明" data-src="workspace-guide.html?embedded=1&amp;v=5"></iframe>
+  </dialog>
+  <dialog class="design-help design-paper-modal" id="paperView" aria-labelledby="paperViewTitle">
+    <div class="design-help-heading"><div><img src="assets/workspace-preview/receipt-text.svg" alt=""><h2 id="paperViewTitle">發票草稿檢視</h2></div><button type="button" id="closePaperView" aria-label="關閉發票檢視" title="關閉發票檢視" autofocus>&times;</button></div>
+    <div id="paperViewContent" class="paper-view-scroll" tabindex="0" aria-label="發票票面，可捲動檢視"></div>
+  </dialog>
+  <script src="workspace-preview.js?v=6"></script>
 </body>
 </html>
