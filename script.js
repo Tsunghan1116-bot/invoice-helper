@@ -10,6 +10,8 @@ const state = {
       exportUrl: null
     };
 
+    const INVOICE_PAPER_WIDTH = 900;
+
     const COMPANY_API_BASE = "https://company.g0v.ronny.tw/api";
 
     const serviceTemplates = {
@@ -149,6 +151,8 @@ const state = {
         <td><input class="adjustable" type="checkbox"${item.adjustable === false ? "" : " checked"} title="允許目標金額反推調整此品項數量"></td>
         <td><button type="button" class="danger remove">刪除</button></td>
       `;
+      const labels = ["品名", "數量", "單價", "單價類型", "稅別", "未稅小計", "稅額", "含稅小計", "反推", "操作"];
+      [...tr.cells].forEach((cell, index) => { cell.dataset.label = labels[index]; });
       tr.addEventListener("input", updateTotals);
       tr.addEventListener("change", updateTotals);
       tr.querySelector(".remove").addEventListener("click", () => {
@@ -940,10 +944,10 @@ const state = {
       const stage = document.querySelector("#printPreview .invoice-stage");
       const stack = stage?.querySelector(".invoice-stack");
       if (!stage || !stack || !stage.clientWidth) return;
-      const fit = window.matchMedia("(max-width: 760px)").matches && !document.body.classList.contains("preview-zoomed");
-      const scale = fit ? Math.min(1, stage.clientWidth / 700) : 1;
+      const zoomed = window.matchMedia("(max-width: 760px)").matches && document.body.classList.contains("preview-zoomed");
+      const scale = zoomed ? 1 : Math.min(1, stage.clientWidth / INVOICE_PAPER_WIDTH);
       stage.style.setProperty("--paper-scale", scale);
-      stage.style.height = fit ? `${stack.scrollHeight * scale}px` : "";
+      stage.style.height = `${Math.ceil(stack.scrollHeight * scale)}px`;
     }
 
     function clearInvoiceDownload() {
@@ -1028,6 +1032,8 @@ const state = {
         style.textContent = "body{margin:0;background:white;} .invoice-paper{box-shadow:none;}";
         doc.head.appendChild(style);
         const paper = document.querySelector("#printPreview .invoice-paper").cloneNode(true);
+        paper.style.width = `${INVOICE_PAPER_WIDTH}px`;
+        paper.style.minWidth = `${INVOICE_PAPER_WIDTH}px`;
         const label = doc.createElement("div");
         label.textContent = "開票草稿";
         label.style.cssText = "font:12px sans-serif;text-align:right;color:#647184;margin-bottom:8px;";

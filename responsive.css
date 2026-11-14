@@ -1,0 +1,81 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { min-height: 100vh; min-height: 100dvh; line-height: 1.5; }
+button, input, select, textarea { font-family: inherit; }
+.settings > label, .buyer-fields > label, .lookup-actions, .entry-heading, .subsection-title > span { min-width: 0; }
+.settings input, .settings select, .buyer-fields input { width: 100%; max-width: 100%; min-width: 0; }
+input[type="date"] { appearance: none; -webkit-appearance: none; text-align: left; }
+input[type="date"]::-webkit-date-and-time-value { min-height: 1.5em; text-align: left; }
+.invoice-stage { width: 100%; max-width: 900px; margin-inline: auto; overflow: hidden; }
+.invoice-stage .invoice-stack { width: 900px; transform: scale(var(--paper-scale, 1)); transform-origin: top left; }
+.invoice-stage .invoice-paper.invoice-template { width: 900px; min-width: 900px; }
+.invoice-paper.invoice-template { padding: 16px 14px 10px; }
+.invoice-template .invoice-title { min-height: 72px; }
+.invoice-template .invoice-lines th, .invoice-template .invoice-lines td { height: 30px; }
+.invoice-template .invoice-total-table td { height: 32px; }
+.invoice-template .invoice-grand-line { min-height: 44px; }
+.invoice-template .invoice-footer-tip { margin-top: 10px; }
+.suggestion-topline, .suggestion-topline h3 { min-width: 0; }
+.suggestion-topline h3 { overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  .app-hero { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  main { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  #entryPanel input:not([type="radio"]):not([type="checkbox"]), #entryPanel select, #entryPanel textarea { font-size: 16px; min-width: 0; max-width: 100%; line-height: 1.5; }
+  #entryPanel input:not([type="radio"]):not([type="checkbox"]), #entryPanel select { min-height: 44px; }
+  .settings { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .settings label { min-width: 0; }
+  .buyer-fields label, .settings label { font-size: 14px; line-height: 1.5; }
+  .subsection-title { gap: 8px; align-items: flex-start; }
+  .items-title > span { width: 100%; }
+  .items-title small { display: block; margin-top: 3px; font-size: 12px; }
+  .items-title .toolbar { width: 100%; align-items: flex-start; }
+  .items-title button, .item-tools summary { min-height: 44px; }
+  .item-tools[open] { max-width: none; flex: 1; }
+  .item-tools[open] button { white-space: normal; }
+
+  /* Editable rows have their own layout; the invoice paper remains a table. */
+  .table-wrap, .show-item-details .table-wrap { overflow: visible; }
+  .table-wrap table, .show-item-details .table-wrap table { display: block; width: 100%; min-width: 0; table-layout: auto; }
+  .table-wrap thead { display: none; }
+  .table-wrap tbody { display: block; }
+  .table-wrap tbody tr { position: relative; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 10px; padding: 10px; border-bottom: 1px solid var(--line); }
+  .table-wrap tbody tr:last-child { border-bottom: 0; }
+  .table-wrap tbody td, .table-wrap tbody td:not(:last-child) { min-width: 0; padding: 0; border: 0; }
+  .table-wrap tbody td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; text-align: left; }
+  .table-wrap tbody td:first-child { grid-column: 1 / -1; padding-right: 52px; }
+  .table-wrap tbody td:nth-child(2), .table-wrap tbody td:nth-child(3) { grid-row: 2; }
+  .table-wrap tbody td:nth-child(6) { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; order: 3; font-size: 16px; }
+  .table-wrap tbody td:nth-child(6)::before { margin: 0; }
+  .table-wrap tbody td:last-child { position: absolute; top: 32px; right: 10px; width: 44px; }
+  .table-wrap tbody td:last-child::before { display: none; }
+  .table-wrap .remove { width: 44px; min-height: 44px; padding: 0; }
+  .table-wrap input, .table-wrap select { width: 100%; }
+  .table-wrap .unit-kind { min-height: 18px; margin-top: 3px; }
+  .show-item-details .table-wrap tbody td:nth-child(4), .show-item-details .table-wrap tbody td:nth-child(5), .show-item-details .table-wrap tbody td:nth-child(7), .show-item-details .table-wrap tbody td:nth-child(8) { display: block; width: auto !important; order: 2; }
+  .show-item-details .table-wrap tbody td:nth-child(7), .show-item-details .table-wrap tbody td:nth-child(8) { order: 3; }
+  .preview-controls { flex-wrap: wrap; }
+  .preview-controls .invoice-type-selector { min-width: 0; flex: 1 1 200px; }
+  .preview-controls #zoomInvoice { flex-shrink: 0; }
+  .preview-heading .preview-actions { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .preview-actions #downloadInvoice { white-space: normal; line-height: 1.4; }
+  .preview-mode .preview-actions { bottom: 0; }
+  .preview-zoomed .invoice-stage { overflow-x: auto; }
+  .preview-zoomed .invoice-stage .invoice-stack { transform: none; }
+  .allocation-workspace .suggestion-description { grid-column: 1 / -1; grid-row: auto; padding: 0; white-space: normal; overflow-wrap: anywhere; }
+  .allocation-workspace .suggestion-details { grid-column: 1 / -1; grid-row: auto; justify-self: start; height: auto; }
+  .allocation-workspace .suggestion .suggestion-total { grid-column: 2; grid-row: 1; }
+  .allocation-workspace .suggestion button[data-apply-plan] { grid-row: auto; min-height: 44px; }
+}
+@media (max-width: 360px) {
+  .settings { grid-template-columns: minmax(0,1fr); }
+  .allocation-workspace .allocation-settings .form-grid { grid-template-columns: minmax(0,1fr); }
+  .preview-actions #backToEditor { flex-basis: 78px; }
+}
+@media print {
+  .invoice-stage { max-width: none; overflow: visible; height: auto !important; }
+  .invoice-stage .invoice-stack { width: 100%; transform: none !important; }
+  .invoice-stage .invoice-paper.invoice-template { width: 100%; min-width: 0; }
+}
