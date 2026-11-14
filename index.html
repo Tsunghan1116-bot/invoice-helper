@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css?v=20261104c">
   <link rel="stylesheet" href="workspace.css?v=20261114c">
   <link rel="stylesheet" href="responsive.css?v=20261114c">
-  <link rel="stylesheet" href="workspace-preview.css?v=6">
+  <link rel="stylesheet" href="workspace-preview.css?v=8">
 </head>
 <body class="design-preview">
   <aside class="design-sidebar" aria-label="主要導覽">
@@ -263,9 +263,10 @@
     <iframe id="designHelpFrame" title="開票工作台圖文操作說明" data-src="workspace-guide.html?embedded=1&amp;v=5"></iframe>
   </dialog>
   <dialog class="design-help design-paper-modal" id="paperView" aria-labelledby="paperViewTitle">
-    <div class="design-help-heading"><div><img src="assets/workspace-preview/receipt-text.svg" alt=""><h2 id="paperViewTitle">發票草稿檢視</h2></div><button type="button" id="closePaperView" aria-label="關閉發票檢視" title="關閉發票檢視" autofocus>&times;</button></div>
+    <div class="design-help-heading"><div><img src="assets/workspace-preview/receipt-text.svg" alt=""><h2 id="paperViewTitle">發票草稿檢視</h2></div><div class="paper-view-modes" role="group" aria-label="票面顯示比例"><button type="button" data-paper-scale="fit" aria-pressed="true">整張檢視</button><button type="button" data-paper-scale="original" aria-pressed="false">原始尺寸</button></div><button type="button" id="closePaperView" aria-label="關閉發票檢視" title="關閉發票檢視" autofocus>&times;</button></div>
     <div id="paperViewContent" class="paper-view-scroll" tabindex="0" aria-label="發票票面，可捲動檢視"></div>
   </dialog>
-  <script src="workspace-preview.js?v=6"></script>
+  <script src="assets/workspace-preview/seller-stamp.js?v=2"></script>
+  <script src="workspace-preview.js?v=7"></script>
 </body>
 </html>

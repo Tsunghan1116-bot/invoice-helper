@@ -12,6 +12,21 @@
   document.querySelector(".app-hero").remove();
   const summary = document.querySelector(".summary");
   el("printPreview").after(summary);
+  function applySellerStamp() {
+    const holder = document.querySelector("#printPreview .invoice-stamp-reminder");
+    if (!holder || !window.invoiceSellerStampDataUrl || holder.querySelector("img")) return;
+    const image = document.createElement("img");
+    image.src = window.invoiceSellerStampDataUrl;
+    image.alt = "營業人統一發票專用章影像";
+    image.className = "invoice-business-stamp";
+    holder.replaceChildren(image);
+  }
+  const refreshWithOriginalWorkflow = window.draftWorkflowChanged;
+  window.draftWorkflowChanged = () => {
+    refreshWithOriginalWorkflow();
+    applySellerStamp();
+  };
+  applySellerStamp();
   document.querySelector(".preview-panel").append(document.querySelector(".preview-actions"));
   const newIcon = document.createElement("img");
   newIcon.src = "assets/icons/plus.svg";
@@ -79,37 +94,64 @@
   });
   const paperView = el("paperView");
   let paperScroll = { x: 0, y: 0 };
+  let paperScaleMode = "fit";
+  function fitPaperView() {
+    if (!paperView.open) return;
+    const content = el("paperViewContent");
+    const stage = content.querySelector(".paper-view-stage");
+    const paper = stage?.querySelector(".invoice-paper");
+    if (!paper) return;
+    const compact = window.matchMedia("(max-width: 760px)").matches && paperScaleMode === "fit";
+    if (!compact) paperView.style.height = "";
+    const style = getComputedStyle(content);
+    const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const headingHeight = paperView.querySelector(".design-help-heading").offsetHeight;
+    const width = content.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const height = compact ? window.innerHeight - 24 - headingHeight - paddingY - 2 : content.clientHeight - paddingY;
+    const scale = paperScaleMode === "original" ? 1 : Math.min(1, width / INVOICE_PAPER_WIDTH, height / paper.offsetHeight);
+    stage.style.width = `${Math.floor(INVOICE_PAPER_WIDTH * scale)}px`;
+    stage.style.height = `${Math.ceil(paper.offsetHeight * scale)}px`;
+    paper.style.transform = `scale(${scale})`;
+    if (compact) paperView.style.height = `${Math.ceil(paper.offsetHeight * scale) + headingHeight + paddingY + 2}px`;
+  }
   el("zoomInvoice").addEventListener("click", (event) => {
-    if (window.matchMedia("(max-width: 760px)").matches) return;
     event.stopImmediatePropagation();
+    applySellerStamp();
     const paper = document.querySelector("#printPreview .invoice-paper");
     if (!paper) return;
     const clone = paper.cloneNode(true);
     clone.style.width = `${INVOICE_PAPER_WIDTH}px`;
     clone.style.minWidth = `${INVOICE_PAPER_WIDTH}px`;
-    el("paperViewContent").replaceChildren(clone);
+    const stage = document.createElement("div");
+    stage.className = "paper-view-stage";
+    stage.append(clone);
+    el("paperViewContent").replaceChildren(stage);
+    paperScaleMode = "fit";
+    document.querySelectorAll("[data-paper-scale]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.paperScale === "fit")));
     paperScroll = { x: window.scrollX, y: window.scrollY };
     document.body.classList.add("design-paper-open");
     el("zoomInvoice").setAttribute("aria-expanded", "true");
     paperView.showModal();
+    fitPaperView();
     el("paperViewContent").scrollTo(0, 0);
   }, true);
   function syncZoomControl() {
-    const mobile = window.matchMedia("(max-width: 760px)").matches;
     const button = el("zoomInvoice");
-    button.setAttribute("aria-controls", mobile ? "printPreview" : "paperView");
-    if (mobile) {
-      button.removeAttribute("aria-haspopup");
-      button.removeAttribute("aria-expanded");
-      button.textContent = document.body.classList.contains("preview-zoomed") ? "完整票面" : "放大檢視";
-    } else {
-      button.setAttribute("aria-haspopup", "dialog");
-      button.setAttribute("aria-expanded", String(paperView.open));
-      button.textContent = "放大檢視";
-    }
+    button.setAttribute("aria-controls", "paperView");
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-expanded", String(paperView.open));
+    button.removeAttribute("aria-pressed");
+    button.textContent = "放大檢視";
   }
   window.matchMedia("(max-width: 760px)").addEventListener("change", syncZoomControl);
   syncZoomControl();
+  new ResizeObserver(fitPaperView).observe(el("paperViewContent"));
+  document.querySelectorAll("[data-paper-scale]").forEach((button) => button.addEventListener("click", () => {
+    paperScaleMode = button.dataset.paperScale;
+    document.querySelectorAll("[data-paper-scale]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+    fitPaperView();
+    el("paperViewContent").scrollTo(0, 0);
+  }));
   el("closePaperView").addEventListener("click", () => paperView.close());
   paperView.addEventListener("click", (event) => {
     const bounds = paperView.getBoundingClientRect();
@@ -120,6 +162,7 @@
     el("zoomInvoice").setAttribute("aria-expanded", "false");
     el("zoomInvoice").focus({ preventScroll: true });
     el("paperViewContent").replaceChildren();
+    paperView.style.height = "";
     window.scrollTo(paperScroll.x, paperScroll.y);
   });
   el("designDrafts").addEventListener("click", () => {
