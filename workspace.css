@@ -353,6 +353,14 @@ button.text-action:hover { background: transparent; color: var(--primary); }
 .preview-controls .invoice-type-selector { gap: 6px 14px; }
 .preview-controls .invoice-type-selector legend { float: none; margin: 0; padding: 0; font-size: 12px; }
 .preview-controls #zoomInvoice { margin: 0; }
+#sharedEditor > #priceQuestion { margin: 12px 0 0; padding: 10px 12px; }
+#sharedEditor > #priceQuestion .price-choices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 0 0 8px; }
+#sharedEditor > #priceQuestion .price-choices label { min-height: 44px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+#sharedEditor > #priceQuestion .price-choices label:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+.price-choices span { font-weight: 650; }
+.price-choices small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+#sharedEditor > #priceQuestion + .price-options { margin-top: 8px; }
+#sharedEditor > #priceQuestion:not([hidden]) + .price-options { display: none; }
 #previewState { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid #aa7b38; background: #fff8ed; color: #805414; font-size: 13px; }
 #checkPreview, #backToEditor { display: none; }
 .allocation-workspace { margin: 0; padding: 0 0 16px; border-top: 0; border-bottom: 1px solid var(--line); }

@@ -24,8 +24,7 @@
   for (const selector of [".buyer-title", "#buyerFields", ".settings-title", ".settings", ".items-title", ".table-wrap", ".editor-bottom", "#fieldIssue", "#validationBox", ".invoice-number-settings", ".editor-footer"]) {
     shared.append(panel.querySelector(selector));
   }
-  shared.prepend(el("priceQuestion"));
-  shared.querySelector(".items-title").before(document.querySelector(".price-options"));
+  shared.querySelector(".table-wrap").after(el("priceQuestion"), document.querySelector(".price-options"));
   panel.insertBefore(allocation, shared);
   panel.prepend(status);
   document.querySelector(".workspace-actions").prepend(el("draftFiles"));

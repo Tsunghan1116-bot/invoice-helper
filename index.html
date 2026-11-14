@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>開票工作台｜發票草稿與金額編列</title>
   <link rel="stylesheet" href="style.css?v=20261104c">
-  <link rel="stylesheet" href="workspace.css?v=20261113b">
+  <link rel="stylesheet" href="workspace.css?v=20261114a">
 </head>
 <body>
   <header class="app-hero">
@@ -39,10 +39,10 @@
         <textarea id="transactionText" rows="3" placeholder="抬頭：範例商行；統編：12345678；課程教學 4 堂，每堂 3000 元；教材製作 1 式，每式 2000 元；以上未稅。"></textarea>
         <div class="description-help"><button type="button" class="text-action" id="fillExample">試填範例</button><span id="descriptionCount">0 字</span></div>
         <button type="button" id="parseTransaction">整理開票內容</button>
-        <fieldset id="priceQuestion" hidden><legend>這些單價是未稅還是含稅？</legend><div class="price-choices"><label><input type="radio" name="priceAnswer" value="untaxed">未稅，另加營業稅</label><label><input type="radio" name="priceAnswer" value="taxed">含稅，已含營業稅</label></div><button type="button" id="resolvePrice">確認價格並繼續</button><p id="priceQuestionStatus" role="status"></p></fieldset>
-        <details class="price-options"><summary>調整全部品項的價格類型：<span id="sourcePriceSummary">待確認</span></summary><div class="price-confirmation">
-          <label>描述中的價格<select id="sourcePriceType"><option value="pending">待確認</option><option value="untaxed">未稅</option><option value="taxed">含稅</option></select></label>
-          <button type="button" class="secondary" id="confirmSourcePrice">確認並套用價格類型</button>
+        <fieldset id="priceQuestion" hidden><legend>待確認的單價是未稅還是含稅？</legend><div class="price-choices"><label><input type="radio" name="priceAnswer" value="untaxed"><span>未稅<small>另加營業稅</small></span></label><label><input type="radio" name="priceAnswer" value="taxed"><span>含稅<small>已含營業稅</small></span></label></div><button type="button" id="resolvePrice">確認單價類型</button><p id="priceQuestionStatus" role="status"></p></fieldset>
+        <details class="price-options"><summary>修改含稅／未稅（目前：<span id="sourcePriceSummary">待確認</span>）</summary><div class="price-confirmation">
+          <label>全部品項單價<select id="sourcePriceType"><option value="pending">待確認</option><option value="untaxed">未稅</option><option value="taxed">含稅</option></select></label>
+          <button type="button" class="secondary" id="confirmSourcePrice">套用全部品項</button>
         </div></details>
         <p id="sourceStatus" role="status" aria-live="polite"></p>
         <ul id="sourceIssues" hidden></ul>
@@ -128,7 +128,7 @@
 
       <div class="subsection-title items-title">
         <span><span class="section-number" aria-hidden="true">04</span>品項明細 <small>小計為未稅；單價依各筆標示</small></span>
-        <div class="toolbar"><button type="button" class="secondary" id="addRow"><img class="button-icon" src="assets/icons/plus.svg" alt="">新增品項</button><details class="item-tools"><summary>更多設定</summary><button type="button" class="secondary" id="clearRows">清除明細</button><button type="button" class="secondary" id="itemDetails" aria-pressed="false">稅別設定</button></details></div>
+        <div class="toolbar"><button type="button" class="secondary" id="addRow"><img class="button-icon" src="assets/icons/plus.svg" alt="">新增品項</button><details class="item-tools"><summary>更多設定</summary><button type="button" class="secondary" id="clearRows">清除明細</button><button type="button" class="secondary" id="itemDetails" aria-pressed="false">單價與稅別設定</button></details></div>
       </div>
 
       <div class="table-wrap">
@@ -236,6 +236,6 @@
   <script src="script.js?v=20261111b"></script>
   <script src="transaction-parser.js?v=20261111b"></script>
   <script src="draft-workflow.js?v=20261113a"></script>
-  <script src="workspace-modes.js?v=20261113b"></script>
+  <script src="workspace-modes.js?v=20261114a"></script>
 </body>
 </html>
